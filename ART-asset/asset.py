@@ -191,7 +191,6 @@ params.fee = 1000
 params.flat_fee = True
 
 # asset_id = 328952;
-
 txn = AssetConfigTxn(
     sender=accounts[2]["pk"],
     sp=params,
