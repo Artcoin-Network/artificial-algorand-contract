@@ -1,3 +1,12 @@
+## installation
+
+```shellscript
+python3 -m venv algovenv
+source algovenv/bin/activate
+# should see (algovenv) in the terminal after this
+pip install py-algorand-sdk pyteal
+```
+
 ## pip list
 
 `pip install py-algorand-sdk pyteal black`
