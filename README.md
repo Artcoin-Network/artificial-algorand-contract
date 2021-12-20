@@ -1,6 +1,6 @@
 ## pip list
 
-`pip install PyTeal black`
+`pip install py-algorand-sdk pyteal black`
 
 | Package           | Version |
 | ----------------- | ------- |

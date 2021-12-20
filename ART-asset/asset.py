@@ -2,12 +2,13 @@ r"""
 Based on https://github.com/algorand/docs/blob/master/examples/assets/v2/python/asset_example.py
 """
 
+from dataclasses import dataclass
 import json
 from os import error
+from typing import List
 from algosdk.v2client import algod
 from algosdk import account, mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, AssetFreezeTxn
-
 
 # Shown for demonstration purposes. NEVER reveal secret mnemonics in practice.
 # Change these values with your mnemonics
@@ -19,23 +20,34 @@ mnemonic1 = "canal enact luggage spring similar zoo couple stomach shoe laptop m
 mnemonic2 = "beauty nurse season autumn curve slice cry strategy frozen spy panic hobby strong goose employ review love fee pride enlist friend enroll clip ability runway"
 mnemonic3 = "picnic bright know ticket purity pluck stumble destroy ugly tuna luggage quote frame loan wealth edge carpet drift cinnamon resemble shrimp grain dynamic absorb edge"
 
-
-# For ease of reference, add account public and private keys to
-# an accounts dict.
-accounts = {}
-counter = 1
-for m in [mnemonic1, mnemonic2, mnemonic3]:
-    accounts[counter] = {}
-    accounts[counter]["pk"] = mnemonic.to_public_key(m)
-    accounts[counter]["sk"] = mnemonic.to_private_key(m)
-    counter += 1
-
 # Specify your node address and token. This must be updated.
 # algod_address = ""  # ADD ADDRESS
 # algod_token = ""  # ADD TOKEN
 
 algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+
+class Account:
+    pk: bytes | str
+    sk: bytes | str
+    addr: str
+    id: int
+
+    def __init__(self, mnemonics: List[str], id):
+        self.id = id
+        self.pk = mnemonic.to_public_key(mnemonics)
+        self.sk = mnemonic.to_private_key(mnemonics)
+
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
+
+accounts = {}
+accounts[1] = Account([mnemonic1], 1)
+accounts[2] = Account([mnemonic2], 2)
+accounts[3] = Account([mnemonic3], 3)
+
 
 # Initialize an algod client
 algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
