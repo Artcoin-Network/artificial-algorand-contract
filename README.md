@@ -1,11 +1,14 @@
 ## installation
 
-```shellscript
-python3 -m venv algovenv
-source algovenv/bin/activate
-# should see (algovenv) in the terminal after this
-pip install py-algorand-sdk pyteal
-```
+- [ ] install sandbox #TODO
+- use python venv
+
+  ```shellscript
+  python3 -m venv algovenv
+  source algovenv/bin/activate
+  # should see (algovenv) in the terminal after this
+  pip install py-algorand-sdk pyteal
+  ```
 
 ## pip list
 

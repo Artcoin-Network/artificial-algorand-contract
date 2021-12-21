@@ -28,21 +28,6 @@ algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 
-class Account:
-    pk: bytes | str
-    sk: bytes | str
-    addr: str
-    id: int
-
-    def __init__(self, mnemonics: List[str], id):
-        self.id = id
-        self.pk = mnemonic.to_public_key(mnemonics)
-        self.sk = mnemonic.to_private_key(mnemonics)
-
-    def __getitem__(self, item):
-        return self.__dict__[item]
-
-
 accounts = {}
 accounts[1] = Account([mnemonic1], 1)
 accounts[2] = Account([mnemonic2], 2)
@@ -73,8 +58,8 @@ def wait_for_confirmation(client, txid):
     return txinfo
 
 
-#   Utility function used to print created asset for account and asset_id
 def print_created_asset(algod_client, account, asset_id):
+    """Utility function used to print created asset for account and asset_id"""
     # note: if you have an indexer instance available it is easier to just use this
     # response = my_indexer.accounts(asset_id = asset_id)
     # then use 'account_info['created-assets'][0] to get info on the created asset
