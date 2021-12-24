@@ -1,3 +1,4 @@
+from typing import Literal, Optional, TypedDict
 from algosdk import mnemonic, account
 from typed_algosdk import decode_address, account as t_account
 
@@ -9,24 +10,64 @@ def address_to_public_key(address: str) -> str:
     return base64.b32encode(decode_address(address)).decode()
 
 
+""" TYPING """
+Mnemonics = str
+
+
+class AlgoAccSecret(TypedDict):
+    sk: str | None
+    mnemonics: Mnemonics | None
+
+
+sampleInfo = AlgoAccSecret(
+    sk="Z2CNMQ6JQQUBEOOJRDHTWVHJX55ZL7CRILNNBICBFY6Q5V7OFDG2IBYVFM", mnemonics=None
+)
+sampleInfo2 = AlgoAccSecret(
+    sk=None,
+    mnemonics="monster sniff airport silent try this wheat style walnut anchor pond carry air letter sign matrix permit hope sentence canyon faculty strategy spider able indoor",
+)
+
+
 class AlgoAcc:
-
-    pk: str
-    sk: str
+    __sk: str
     addr: str
+    addr: str
+    pk: str
 
-    def __init__(self, mnemonics: list[str], id):
-        private_key, address = t_account.generate_account()
-        print("My address: {}".format(address))
-        print("My passphrase: {}".format(mnemonic.from_private_key(private_key)))
-        self.pk = address_to_public_key(address)
-        self.sk = private_key
-        self.addr = address
-        self.mnemonics = mnemonics
+    def __init__(self, id, info: AlgoAccSecret):
         self.id = id
+        # GET sk, and generate all from sk
+        if not info:
+            self.create()
+
+        elif info["sk"]:
+            self.retrive(info["sk"])
+
+        elif info["mnemonics"]:
+            self.retrive_from_mnemonics(info["mnemonics"])
+        else:
+            raise Exception("No info to create account")
+
+        self.addr = t_account.address_from_private_key(self.__sk)
+        self.pk = address_to_public_key(self.addr)
+        self.mnemonics = mnemonic.from_private_key(self.__sk)
 
     def __getitem__(self, item):
         return self.__dict__[item]
+
+    def create(self):
+        private_key, address = t_account.generate_account()
+
+        print(
+            f"Created of acc #{self.id} with address and passphrase\n {address}\n {mnemonic.from_private_key(private_key)}"
+        )
+        self.__sk = private_key
+
+    def retrive(self, sk):
+        self.__sk = sk
+
+    def retrive_from_mnemonics(self, mnemonics: Mnemonics):
+        self.__sk = mnemonic.to_private_key(mnemonics)
 
 
 acct = account.generate_account()

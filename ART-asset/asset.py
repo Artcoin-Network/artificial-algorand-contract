@@ -9,7 +9,7 @@ from typing import List
 from algosdk.v2client import algod
 from algosdk import account, mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, AssetFreezeTxn
-from algo_acc import AlgoAcc
+from algo_acc import AlgoAcc, AlgoAccSecret
 
 # Shown for demonstration purposes. NEVER reveal secret mnemonics in practice.
 # Change these values with your mnemonics
@@ -30,9 +30,9 @@ algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 
 accounts = {}
-accounts[1] = AlgoAcc([mnemonic1], 1)
-accounts[2] = AlgoAcc([mnemonic2], 2)
-accounts[3] = AlgoAcc([mnemonic3], 3)
+accounts[1] = AlgoAcc(1, AlgoAccSecret(sk=None, mnemonics=mnemonic1))
+accounts[2] = AlgoAcc(2, AlgoAccSecret(sk=None, mnemonics=mnemonic2))
+accounts[3] = AlgoAcc(3, AlgoAccSecret(sk=None, mnemonics=mnemonic3))
 
 
 # Initialize an algod client

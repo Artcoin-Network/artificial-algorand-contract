@@ -20,6 +20,15 @@ class account:
             raise Exception("generate_account() failed")
         return sk, addr
 
+    @staticmethod
+    def address_from_private_key(private_key: str) -> str:
+        if not isinstance(private_key, str):
+            raise TypeError("private_key is not str")
+        result = algosdk_account.address_from_private_key(private_key)
+        if not isinstance(result, str):
+            raise TypeError("type is not str")
+        return result
+
 
 """ not working, to note: """
 # def generate_account() -> tuple[str, str]:

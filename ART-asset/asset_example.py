@@ -125,6 +125,10 @@ txn = AssetConfigTxn(
 # Sign with secret key of creator
 stxn = txn.sign(accounts[1]["sk"])
 
+
+# ++ check acc info
+accountInfo = algod_client.account_info(accounts[1]["pk"])
+print(accountInfo)
 # Send the transaction to the network and retrieve the txid.
 txid = algod_client.send_transaction(stxn)
 print(txid)
