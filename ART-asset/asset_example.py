@@ -29,11 +29,15 @@ for m in [mnemonic1, mnemonic2, mnemonic3]:
 # algod_address = ""  # ADD ADDRESS
 # algod_token = ""  # ADD TOKEN
 
-algod_address = "http://localhost:4001"
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
+algod_address = "https://testnet-algorand.api.purestake.io/ps2"
+algod_token = "WLJDqY55G5560kyCJVp647ERNZ5kJkdZ8OUdGNnV"
+headers = {
+    "X-API-Key": algod_token,
+}
 # Initialize an algod client
-algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
+algod_client = algod.AlgodClient(
+    algod_token=algod_token, algod_address=algod_address, headers=headers
+)
 
 
 def wait_for_confirmation(client, txid):
