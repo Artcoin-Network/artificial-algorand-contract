@@ -1,15 +1,8 @@
-r"""
-Based on https://github.com/algorand/docs/blob/master/examples/assets/v2/python/asset_example.py
-"""
-
-from dataclasses import dataclass
 import json
-from os import error
-from typing import List
 from algosdk.v2client import algod
 from algosdk import account, mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, AssetFreezeTxn
-from algo_acc import AlgoAcc
+
 
 # Shown for demonstration purposes. NEVER reveal secret mnemonics in practice.
 # Change these values with your mnemonics
@@ -21,19 +14,23 @@ mnemonic1 = "monster sniff airport silent try this wheat style walnut anchor pon
 mnemonic2 = "budget enemy ladder screen meat profit want appear humble village sick blur first wage junk fashion effort around sausage ostrich code airport fix ability shield"
 mnemonic3 = "symptom craft quote wisdom jungle debate split happy pause decline jump diet access entire calm cereal come clay crop winter volume release false abandon solve"
 
+
+# For ease of reference, add account public and private keys to
+# an accounts dict.
+accounts = {}
+counter = 1
+for m in [mnemonic1, mnemonic2, mnemonic3]:
+    accounts[counter] = {}
+    accounts[counter]["pk"] = mnemonic.to_public_key(m)
+    accounts[counter]["sk"] = mnemonic.to_private_key(m)
+    counter += 1
+
 # Specify your node address and token. This must be updated.
 # algod_address = ""  # ADD ADDRESS
 # algod_token = ""  # ADD TOKEN
 
 algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
-
-accounts = {}
-accounts[1] = AlgoAcc([mnemonic1], 1)
-accounts[2] = AlgoAcc([mnemonic2], 2)
-accounts[3] = AlgoAcc([mnemonic3], 3)
-
 
 # Initialize an algod client
 algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
@@ -59,33 +56,33 @@ def wait_for_confirmation(client, txid):
     return txinfo
 
 
-def print_created_asset(algod_client, account, asset_id):
-    """Utility function used to print created asset for account and asset_id"""
+#   Utility function used to print created asset for account and assetid
+def print_created_asset(algodclient, account, assetid):
     # note: if you have an indexer instance available it is easier to just use this
-    # response = my_indexer.accounts(asset_id = asset_id)
+    # response = myindexer.accounts(asset_id = assetid)
     # then use 'account_info['created-assets'][0] to get info on the created asset
-    account_info = algod_client.account_info(account)
+    account_info = algodclient.account_info(account)
     idx = 0
     for my_account_info in account_info["created-assets"]:
         scrutinized_asset = account_info["created-assets"][idx]
         idx = idx + 1
-        if scrutinized_asset["index"] == asset_id:
+        if scrutinized_asset["index"] == assetid:
             print("Asset ID: {}".format(scrutinized_asset["index"]))
             print(json.dumps(my_account_info["params"], indent=4))
             break
 
 
-#   Utility function used to print asset holding for account and asset_id
-def print_asset_holding(algod_client, account, asset_id):
+#   Utility function used to print asset holding for account and assetid
+def print_asset_holding(algodclient, account, assetid):
     # note: if you have an indexer instance available it is easier to just use this
-    # response = my_indexer.accounts(asset_id = asset_id)
+    # response = myindexer.accounts(asset_id = assetid)
     # then loop thru the accounts returned and match the account you are looking for
-    account_info = algod_client.account_info(account)
+    account_info = algodclient.account_info(account)
     idx = 0
     for my_account_info in account_info["assets"]:
         scrutinized_asset = account_info["assets"][idx]
         idx = idx + 1
-        if scrutinized_asset["asset-id"] == asset_id:
+        if scrutinized_asset["asset-id"] == assetid:
             print("Asset ID: {}".format(scrutinized_asset["asset-id"]))
             print(json.dumps(scrutinized_asset, indent=4))
             break
@@ -116,22 +113,20 @@ txn = AssetConfigTxn(
     sp=params,
     total=1000,
     default_frozen=False,
-    # TODO: optional, will rename # unit_name="LATINUM",
-    # TODO: optional, will rename # asset_name="latinum",
+    unit_name="LATINUM",
+    asset_name="latinum",
     manager=accounts[2]["pk"],
     reserve=accounts[2]["pk"],
-    # TODO: do we need these functions? #
     freeze=accounts[2]["pk"],
-    # TODO: do we need these functions? #
     clawback=accounts[2]["pk"],
-    url="https://artcoin.network/",
+    url="https://path/to/my/asset/details",
     decimals=0,
 )
 # Sign with secret key of creator
-secret_key_txn = txn.sign(accounts[1]["sk"])
+stxn = txn.sign(accounts[1]["sk"])
 
 # Send the transaction to the network and retrieve the txid.
-txid = algod_client.send_transaction(secret_key_txn)
+txid = algod_client.send_transaction(stxn)
 print(txid)
 
 # Retrieve the asset ID of the newly created asset by first
@@ -141,7 +136,6 @@ print(txid)
 # Wait for the transaction to be confirmed
 wait_for_confirmation(algod_client, txid)
 
-asset_id = None
 try:
     # Pull account info for the creator
     # account_info = algod_client.account_info(accounts[1]['pk'])
@@ -192,8 +186,6 @@ params.fee = 1000
 params.flat_fee = True
 
 # asset_id = 328952;
-if asset_id is None:
-    raise error("Asset ID not found")
 
 txn = AssetConfigTxn(
     sender=accounts[2]["pk"],
@@ -205,8 +197,8 @@ txn = AssetConfigTxn(
     clawback=accounts[2]["pk"],
 )
 # sign by the current manager - Account 2
-secret_key_txn = txn.sign(accounts[2]["sk"])
-txid = algod_client.send_transaction(secret_key_txn)
+stxn = txn.sign(accounts[2]["sk"])
+txid = algod_client.send_transaction(stxn)
 print(txid)
 
 # Wait for the transaction to be confirmed
@@ -261,8 +253,8 @@ if not holding:
         amt=0,
         index=asset_id,
     )
-    secret_key_txn = txn.sign(accounts[3]["sk"])
-    txid = algod_client.send_transaction(secret_key_txn)
+    stxn = txn.sign(accounts[3]["sk"])
+    txid = algod_client.send_transaction(stxn)
     print(txid)
     # Wait for the transaction to be confirmed
     wait_for_confirmation(algod_client, txid)
@@ -295,8 +287,8 @@ txn = AssetTransferTxn(
     amt=10,
     index=asset_id,
 )
-secret_key_txn = txn.sign(accounts[1]["sk"])
-txid = algod_client.send_transaction(secret_key_txn)
+stxn = txn.sign(accounts[1]["sk"])
+txid = algod_client.send_transaction(stxn)
 print(txid)
 # Wait for the transaction to be confirmed
 wait_for_confirmation(algod_client, txid)
@@ -328,8 +320,8 @@ txn = AssetFreezeTxn(
     target=accounts[3]["pk"],
     new_freeze_state=True,
 )
-secret_key_txn = txn.sign(accounts[2]["sk"])
-txid = algod_client.send_transaction(secret_key_txn)
+stxn = txn.sign(accounts[2]["sk"])
+txid = algod_client.send_transaction(stxn)
 print(txid)
 # Wait for the transaction to be confirmed
 wait_for_confirmation(algod_client, txid)
@@ -363,8 +355,8 @@ txn = AssetTransferTxn(
     index=asset_id,
     revocation_target=accounts[3]["pk"],
 )
-secret_key_txn = txn.sign(accounts[2]["sk"])
-txid = algod_client.send_transaction(secret_key_txn)
+stxn = txn.sign(accounts[2]["sk"])
+txid = algod_client.send_transaction(stxn)
 print(txid)
 # Wait for the transaction to be confirmed
 wait_for_confirmation(algod_client, txid)
@@ -413,9 +405,9 @@ txn = AssetConfigTxn(
 )
 
 # Sign with secret key of creator
-secret_key_txn = txn.sign(accounts[1]["sk"])
+stxn = txn.sign(accounts[1]["sk"])
 # Send the transaction to the network and retrieve the txid.
-txid = algod_client.send_transaction(secret_key_txn)
+txid = algod_client.send_transaction(stxn)
 print(txid)
 # Wait for the transaction to be confirmed
 wait_for_confirmation(algod_client, txid)

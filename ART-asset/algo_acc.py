@@ -22,6 +22,8 @@ class AlgoAcc:
         self.pk = address_to_public_key(address)
         self.sk = private_key
         self.addr = address
+        self.mnemonics = mnemonics
+        self.id = id
 
     def __getitem__(self, item):
         return self.__dict__[item]
