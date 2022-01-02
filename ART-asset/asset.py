@@ -9,7 +9,7 @@ from typing import List
 from algosdk.v2client import algod
 from algosdk import account, mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, AssetFreezeTxn
-from algo_acc import AlgoAcc, AlgoAccSecret
+from ..helper.algo_acc import AlgoAcc, AlgoAccSecret
 
 # Shown for demonstration purposes. NEVER reveal secret mnemonics in practice.
 # Change these values with your mnemonics

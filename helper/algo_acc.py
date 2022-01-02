@@ -1,6 +1,6 @@
 from typing import Literal, Optional, TypedDict
 from algosdk import mnemonic, account
-from typed_algosdk import decode_address, account as t_account
+from helper.typed_algosdk import decode_address, account as t_account
 
 
 def address_to_public_key(address: str) -> str:
