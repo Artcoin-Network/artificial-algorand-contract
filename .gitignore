@@ -1,7 +1,7 @@
-algovenv
+.nogit 
 
 ## secret
-__secrets__.py
+secret.env
 
 ## python
 
