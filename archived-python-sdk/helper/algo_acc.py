@@ -1,6 +1,7 @@
-from typing import Literal, Optional, TypedDict
-from algosdk import mnemonic, account
-from typed_algosdk import decode_address, account as t_account
+from typing import TypedDict
+from algosdk import mnemonic
+
+from .typed_algosdk import decode_address, account as t_account
 
 
 def address_to_public_key(address: str) -> str:
@@ -70,8 +71,16 @@ class AlgoAcc:
         self.__sk = mnemonic.to_private_key(mnemonics)
 
 
-acct = account.generate_account()
-address1 = acct[1]
-print("Account 1")
-print(address1)
-mnemonic1 = mnemonic.from_private_key(acct[0])
+if __name__ == "__main__":
+    """TEST"""
+    import sys
+
+    print(sys.path)
+    from ..__secrets__ import MNEMONIC1, MNEMONIC2, MNEMONIC3
+
+    accounts = {}
+    accounts[1] = AlgoAcc(1, AlgoAccSecret(sk=None, mnemonics=MNEMONIC1))
+    accounts[2] = AlgoAcc(2, AlgoAccSecret(sk=None, mnemonics=MNEMONIC2))
+    accounts[3] = AlgoAcc(3, AlgoAccSecret(sk=None, mnemonics=MNEMONIC3))
+
+    print(accounts)
