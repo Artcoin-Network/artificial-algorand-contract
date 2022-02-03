@@ -9,34 +9,12 @@ from typing import List
 from algosdk.v2client import algod
 from algosdk import account, mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, AssetFreezeTxn
+
+from helper.getClient import get_client
 from ..helper.algo_acc import AlgoAcc, AlgoAccSecret
 
-# Shown for demonstration purposes. NEVER reveal secret mnemonics in practice.
-# Change these values with your mnemonics
-# mnemonic1 = "PASTE your phrase for account 1"
-# mnemonic2 = "PASTE your phrase for account 2"
-# mnemonic3 = "PASTE your phrase for account 3"
-
-mnemonic1 = "monster sniff airport silent try this wheat style walnut anchor pond carry air letter sign matrix permit hope sentence canyon faculty strategy spider able indoor"
-mnemonic2 = "budget enemy ladder screen meat profit want appear humble village sick blur first wage junk fashion effort around sausage ostrich code airport fix ability shield"
-mnemonic3 = "symptom craft quote wisdom jungle debate split happy pause decline jump diet access entire calm cereal come clay crop winter volume release false abandon solve"
-
-# Specify your node address and token. This must be updated.
-# algod_address = ""  # ADD ADDRESS
-# algod_token = ""  # ADD TOKEN
-
-algod_address = "http://localhost:4001"
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
-
-accounts = {}
-accounts[1] = AlgoAcc(1, AlgoAccSecret(sk=None, mnemonics=mnemonic1))
-accounts[2] = AlgoAcc(2, AlgoAccSecret(sk=None, mnemonics=mnemonic2))
-accounts[3] = AlgoAcc(3, AlgoAccSecret(sk=None, mnemonics=mnemonic3))
-
-
 # Initialize an algod client
-algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
+algod_client = get_client()
 
 
 def wait_for_confirmation(client, txid):
