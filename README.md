@@ -1,18 +1,11 @@
-## TODO
-
-- [ ] remove sensitive data like test account mnemonics before making this repo public
-- [ ] The purpose of the repo has changed to be only for smart contracts on Algorand blockchain. So should we refactor this repo.
-
 ## DEV Resources
-
-### test accounts
-
-These accounts are on testnet. If they are contaminated by other users, we can always create some new ones.
 
 ## installation
 
-- [ ] install sandbox #TODO
 - use python venv
+- [ ] use artificial-dev-console
+- [ ] use [symmetric-secrete-share](https://github.com/PabloLION/symmetric-secrete-share)
+- [ ] TODO: finish docs on these two.
 
   ```shellscript
   python3 -m venv algovenv
@@ -21,7 +14,16 @@ These accounts are on testnet. If they are contaminated by other users, we can a
   pip install py-algorand-sdk pyteal
   ```
 
-## pip list
+## Move to contribute
+
+This part focus on developing this tool, not using it.
+
+### dev log
+
+- [x] remove sensitive data like test account mnemonics before making this repo public
+- [x] The purpose of the repo has changed to be only for smart contracts on Algorand blockchain. So should we refactor this repo.
+
+### pip list
 
 `pip install py-algorand-sdk pyteal black`
 
