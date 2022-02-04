@@ -5,6 +5,7 @@ name = "artificial-algorand-contract"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
+pyteal = {extras = ["all"], version = "^0.9.1"}
 python = "^3.10"
 
 [tool.poetry.dev-dependencies]
