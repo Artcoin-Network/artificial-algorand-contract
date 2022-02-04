@@ -1,0 +1,16 @@
+[tool.poetry]
+authors = ["Pablion <36828324+Pablion@users.noreply.github.com>"]
+description = "Artificial Algorand contract"
+name = "artificial-algorand-contract"
+version = "0.0.1"
+
+[tool.poetry.dependencies]
+pyteal = {extras = ["all"], version = "^0.9.1"}
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]

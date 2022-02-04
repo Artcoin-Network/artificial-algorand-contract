@@ -2,7 +2,7 @@
 
 ## installation
 
-- use python venv
+- python venv with [poetry](https://python-poetry.org/) `poetry shell`. [Poetry Install Guide](https://python-poetry.org/docs/master/#installing-with-the-official-installer)
 - [ ] use artificial-dev-console
 - [ ] use [symmetric-secrete-share](https://github.com/PabloLION/symmetric-secrete-share)
 - [ ] TODO: finish docs on these two.
@@ -16,7 +16,7 @@
 
 ## Move to contribute
 
-This part focus on developing this tool, not using it.
+This chapter focus on developing this tool, not using it.
 
 ### dev log
 
