@@ -75,12 +75,12 @@ def approval_program():
     return compileTeal(program, Mode.Application, version=5)
 
 
-def clear_state_program():
+def clear_program():
     program = Return(Int(1))
     # Mode.Application specifies that this is a smart contract
     return compileTeal(program, Mode.Application, version=5)
 
 
 # print out the results
-print(approval_program())
-print(clear_state_program())
+# print(approval_program())
+# print(clear_program())
