@@ -84,3 +84,13 @@ def clear_program():
 # print out the results
 # print(approval_program())
 # print(clear_program())
+
+
+def storage_state():
+    state = {
+        "local_ints": 0,
+        "local_bytes": 0,
+        "global_ints": 1,
+        "global_bytes": 0,
+    }
+    return state
