@@ -18,6 +18,12 @@
 
 This chapter focus on developing this tool, not using it.
 
+### Observation
+
+#### Algorand
+
+- Python SDK returns a base64 encoded string, JS returns bytes """
+
 ### dev log
 
 - [x] remove sensitive data like test account mnemonics before making this repo public
