@@ -83,3 +83,6 @@ class State:
 
     def initClient(self) -> None:
         pass
+
+
+state = State(client_type="pure_stake")
