@@ -16,7 +16,7 @@ from algosdk.v2client import algod
 Client_Type = Literal["pure_stake", "sandbox"]
 
 """ GLOBAL VARIABLES """
-status_initialized = False
+state_initialized = False
 
 
 class TestAccounts:
@@ -64,13 +64,13 @@ class ClientInfo:
             raise ValueError(f"client_type={client_type} not supported.")
 
 
-class Status:
+class State:
     accounts: TestAccounts
 
     def __init__(self, client_type: Client_Type) -> None:
-        global status_initialized
-        if status_initialized:
-            raise Exception("Status has already been initialized")
+        global state_initialized
+        if state_initialized:
+            raise Exception("State has already been initialized")
 
         self.accounts = TestAccounts()
         self.client_info = ClientInfo(client_type)
@@ -79,7 +79,7 @@ class Status:
             algod_address=self.client_info.algod_address,
             headers=self.client_info.headers,
         )
-        status_initialized = True
+        state_initialized = True
 
     def initClient(self) -> None:
         pass
