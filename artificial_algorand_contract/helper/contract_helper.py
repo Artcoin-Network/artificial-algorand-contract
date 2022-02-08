@@ -6,31 +6,10 @@ from algosdk import account, mnemonic
 from algosdk.future import transaction
 from algosdk.v2client.algod import AlgodClient
 
-from ..counter import counter_package  # TODO: dynamic imports by name.
 from ..global_state import TestAccounts, algo_config
 from .classes.algorand import AlgoAcc, TealNoOpArgs, TealPackage
 from .transaction_helper import get_default_params, wait_for_confirmation
 
-# initialize an algodClient
-# user declared account mnemonics
-creator_mnemonic = algo_config.accounts.main.request_mnemonics()
-user_mnemonic = algo_config.accounts.bob.request_mnemonics()
-# define private keys
-creator_private_key = mnemonic.to_private_key(creator_mnemonic)
-user_private_key = mnemonic.to_private_key(user_mnemonic)
-
-
-# declare application state storage (immutable)
-local_ints = 0
-local_bytes = 0
-global_ints = 1
-global_bytes = 0
-global_schema = transaction.StateSchema(global_ints, global_bytes)
-local_schema = transaction.StateSchema(local_ints, local_bytes)
-
-approval_program_source_initial = counter_package.approval
-approval_program_source_refactored = counter_package.approval
-clear_program_source = counter_package.clear
 
 # helper function to compile program source
 def compile_program(client: AlgodClient, source_code: str):
@@ -268,11 +247,32 @@ def clear_app(client: AlgodClient, private_key, index):
 
 
 def full_contract_test():
+    from ..counter import counter_package  # TODO: dynamic imports by name.
+
     algod_client = algo_config.client
+
+    approval_program_source_initial = counter_package.approval
+    approval_program_source_refactored = counter_package.approval
+    clear_program_source = counter_package.clear
+
+    # declare application state storage (immutable)
+    local_ints = 0
+    local_bytes = 0
+    global_ints = 1
+    global_bytes = 0
+    global_schema = transaction.StateSchema(global_ints, global_bytes)
+    local_schema = transaction.StateSchema(local_ints, local_bytes)
 
     # compile programs
     approval_program = compile_program(algod_client, approval_program_source_initial)
     clear_program = compile_program(algod_client, clear_program_source)
+
+    # user declared account mnemonics
+    creator_mnemonic = algo_config.accounts.main.request_mnemonics()
+    user_mnemonic = algo_config.accounts.bob.request_mnemonics()
+    # define private keys
+    creator_private_key = mnemonic.to_private_key(creator_mnemonic)
+    user_private_key = mnemonic.to_private_key(user_mnemonic)
 
     # create new application
     app_id = create_app(
@@ -341,6 +341,8 @@ def full_contract_test():
 
 def test_clean_up(app_id: int):
     algod_client = algo_config.client
+    creator_mnemonic = algo_config.accounts.main.request_mnemonics()
+    creator_private_key = mnemonic.to_private_key(creator_mnemonic)
     delete_app(algod_client, creator_private_key, app_id)
 
 
@@ -359,7 +361,7 @@ class TealTester:
         self.accounts = algo_config.accounts
         self.appid = self.create()
 
-    def str_account(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
+    def _literal_to_account(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
         if isinstance(account, AlgoAcc):
             acc = account
         elif account == "main":
@@ -375,7 +377,7 @@ class TealTester:
             client=self.client,
             private_key=self.accounts.main.get_secret_key(),
             approval_program=self.teal.approval,
-            clear_program=self.teal,
+            clear_program=self.teal.clear,
             global_schema=transaction.StateSchema(
                 self.teal.param["global_ints"], self.teal.param["global_bytes"]
             ),
@@ -390,7 +392,7 @@ class TealTester:
         self,
         account: Literal["main", "alice", "bob"] | AlgoAcc,
     ) -> None:
-        sk = self.str_account(account).get_secret_key()
+        sk = self._literal_to_account(account).get_secret_key()
         opt_in_app(self.client, sk, self.appid)
 
     def call(
@@ -402,7 +404,7 @@ class TealTester:
         # TODO: add args check
         call_app(
             client=self.client,
-            private_key=self.str_account(account).get_secret_key(),
+            private_key=self._literal_to_account(account).get_secret_key(),
             index=self.appid,
             app_args=[arg.encode("utf-8") for arg in args],
         )
