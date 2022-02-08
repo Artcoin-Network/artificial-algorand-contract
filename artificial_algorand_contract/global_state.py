@@ -1,7 +1,7 @@
 from tkinter import N
 from typing import Literal
 from artificial_algorand_contract.helper.classes.algorand import AlgoAcc
-from .__secrets__ import (
+from .helper.__secrets__ import (
     ACCOUNT1_MNEMONICS,
     ACCOUNT1_ADDRESS,
     ACCOUNT2_MNEMONICS,
