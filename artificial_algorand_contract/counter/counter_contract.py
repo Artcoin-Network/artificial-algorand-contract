@@ -18,6 +18,8 @@ from pyteal import (
     compileTeal,
 )
 
+from artificial_algorand_contract.helper.classes.algorand import TealCmdList, TealParam
+
 """Basic Counter Application"""
 
 
@@ -90,11 +92,14 @@ def clear_program():
 # print(clear_program())
 
 
-def storage_state():
-    state = {
-        "local_ints": 0,
-        "local_bytes": 0,
-        "global_ints": 1,
-        "global_bytes": 0,
-    }
-    return state
+teal_param: TealParam = {
+    "local_ints": 0,
+    "local_bytes": 0,
+    "global_ints": 1,
+    "global_bytes": 0,
+}
+
+cmd_list: TealCmdList = [
+    {"name": "Add", "args": ["number"]},
+    {"name": "Deduct", "args": ["number"]},
+]

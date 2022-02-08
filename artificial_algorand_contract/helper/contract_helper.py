@@ -6,7 +6,7 @@ from algosdk import account, mnemonic
 from algosdk.future import transaction
 from algosdk.v2client import algod  # for typing
 
-from ..counter import teal  # TODO: use a func to dynamic imports by name.
+from ..counter import counter_package  # TODO: use a func to dynamic imports by name.
 from ..global_state import algo_config
 
 # global_schema = transaction.StateSchema(teal["global_ints"], teal["global_bytes"])
@@ -31,14 +31,13 @@ global_bytes = 0
 global_schema = transaction.StateSchema(global_ints, global_bytes)
 local_schema = transaction.StateSchema(local_ints, local_bytes)
 
-approval_program_source_initial = bytes(teal["approval"], "utf-8")
-approval_program_source_refactored = bytes(teal["approval"], "utf-8")
-clear_program_source = bytes(teal["clear"], "utf-8")
+approval_program_source_initial = counter_package.approval
+approval_program_source_refactored = counter_package.approval
+clear_program_source = counter_package.clear
 
 # helper function to compile program source
-def compile_program(client, source_code):
-    compile_response = client.compile(source_code.decode("utf-8"))
-    return base64.b64decode(compile_response["result"])
+def compile_program(client: algod.AlgodClient, source_code: str):
+    return base64.b64decode(client.compile(source_code))
 
 
 def get_default_params(client: algod.AlgodClient = algo_config.client):

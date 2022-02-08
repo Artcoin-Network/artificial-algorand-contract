@@ -1,3 +1,4 @@
+from typing import TypedDict, Any as Any_type, Optional
 from ..typed_algosdk import account, mnemonic
 
 """ TYPING """
@@ -41,6 +42,68 @@ class AlgoAcc:
 
     def request_mnemonics(self) -> str:
         return self.__mnemonics
+
+
+class TealNoOpArgs(TypedDict):
+    """
+    Args for the no-op application
+
+    Args:
+        name (str): Name of the function to call
+        args (tuple[str]): Tuple of arguments
+    """
+
+    name: str
+    args: list[Any_type]
+
+
+TealCmdList = list[TealNoOpArgs]
+
+
+class TealParam(TypedDict):
+    """
+    A dictionary of parameters for a Teal program
+
+    Args:
+        local_ints (int): The number of local ints to allocate
+        local_bytes (int): The number of local bytes to allocate
+        global_ints (int): The number of global ints to allocate
+        global_bytes (int): The number of global bytes to allocate
+    """
+
+    local_ints: int
+    local_bytes: int
+    global_ints: int
+    global_bytes: int
+
+
+class TealPackage:
+    """
+    A Teal package for to pass into the test function
+
+    Args:
+        approval (str): The approval program
+        clear (str): The clear program
+        param (TealParam): The parameters for the program
+        app_args (None | list[TealNoOpArgs]): The arguments to pass to the program
+    """
+
+    approval: str
+    clear: str
+    param: TealParam
+    args: list[TealNoOpArgs]
+
+    def __init__(
+        self,
+        approval: str,
+        clear: str,
+        param: TealParam,
+        app_args: Optional[TealCmdList] = None,
+    ) -> None:
+        self.approval = approval
+        self.clear = clear
+        self.param = param
+        self.args = app_args or []
 
 
 def algo_acc_test():

@@ -20,16 +20,16 @@ def write_output_teal(filename: str, compile_func: Callable) -> None:
         f.write(compile_func())
 
 
-def write_json_config(filename: str, config_func: Callable) -> None:
+def write_json_config(filename: str, config_dict) -> None:
     output_path = OUTPUT_DIR / filename
     with open(output_path, "w") as f:
-        json_dump(config_func(), f, indent=4)
+        json_dump(config_dict, f, indent=4)
 
 
 def main():
     write_output_teal("approval.teal", approval_program)
     write_output_teal("clear.teal", clear_program)
-    write_json_config("state.json", storage_state)
+    write_json_config("state.json", teal_param)
 
 
 if __name__ == "__main__":
