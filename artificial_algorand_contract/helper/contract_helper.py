@@ -13,7 +13,7 @@ from .transaction_helper import get_default_params, wait_for_confirmation
 
 # helper function to compile program source
 def compile_program(client: AlgodClient, source_code: str):
-    return base64.b64decode(client.compile(source_code))
+    return base64.b64decode(client.compile(source_code)["result"])
 
 
 # create new application
@@ -376,8 +376,8 @@ class TealTester:
         appid = create_app(
             client=self.client,
             private_key=self.accounts.main.get_secret_key(),
-            approval_program=self.teal.approval,
-            clear_program=self.teal.clear,
+            approval_program=compile_program(self.client, self.teal.approval),
+            clear_program=compile_program(self.client, self.teal.clear),
             global_schema=transaction.StateSchema(
                 self.teal.param["global_ints"], self.teal.param["global_bytes"]
             ),
@@ -415,8 +415,8 @@ class TealTester:
             client=self.client,
             private_key=self.accounts.main.get_secret_key(),
             app_id=self.appid,
-            approval_program=self.teal.approval,
-            clear_program=self.teal.clear,
+            approval_program=compile_program(self.client, self.teal.approval),
+            clear_program=compile_program(self.client, self.teal.clear),
         )
 
     def delete(self):

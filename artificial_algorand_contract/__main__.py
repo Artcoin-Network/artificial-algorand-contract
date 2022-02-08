@@ -1,10 +1,12 @@
-from artificial_algorand_contract.helper.contract_helper import (
-    full_contract_test,
-    test_clean_up,
-)
-from .global_state import algo_config
+from .helper.contract_helper import TealTester
+from .counter import counter_package
 
-full_contract_test()
+# from .global_state import algo_config
+
+tester = TealTester(counter_package)
+
+
+# full_contract_test()
 
 # test_clean_up(69762334)
 # test_clean_up(69761527)
