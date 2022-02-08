@@ -40,6 +40,9 @@ class AlgoAcc:
     def print_mnemonics(self) -> None:
         print(self.__mnemonics)
 
+    def get_secret_key(self) -> str:
+        return self.__sk
+
     def request_mnemonics(self) -> str:
         return self.__mnemonics
 

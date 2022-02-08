@@ -15,7 +15,7 @@ from algosdk.v2client import algod
 Client_Type = Literal["pure_stake", "sandbox"]
 
 """ GLOBAL VARIABLES """
-state_initialized = False
+config_initialized = False
 
 
 class TestAccounts:
@@ -69,8 +69,8 @@ class AlgoConfig:
     client: algod.AlgodClient
 
     def __init__(self, client_type: Client_Type) -> None:
-        global state_initialized
-        if state_initialized:
+        global config_initialized
+        if config_initialized:
             raise Exception("State has already been initialized")
 
         self.accounts = TestAccounts()
@@ -80,7 +80,7 @@ class AlgoConfig:
             algod_address=self.client_info.algod_address,
             headers=self.client_info.headers,
         )
-        state_initialized = True
+        config_initialized = True
 
     def initClient(self) -> None:
         pass
