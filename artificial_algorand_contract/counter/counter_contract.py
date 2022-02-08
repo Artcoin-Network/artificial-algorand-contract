@@ -24,7 +24,7 @@ from pyteal import (
 def approval_program():
     handle_creation = Seq([App.globalPut(Bytes("Count"), Int(0)), Return(Int(1))])
 
-    handle_optin = Return(Global.creator_address() == Txn.sender())
+    handle_optin = Return(Int(1))
     handle_closeout = Return(Int(1))
     handle_updateapp = Return(Global.creator_address() == Txn.sender())
     handle_deleteapp = Return(Global.creator_address() == Txn.sender())

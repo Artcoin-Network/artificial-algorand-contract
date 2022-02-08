@@ -381,6 +381,3 @@ def full_contract_test():
 def test_clean_up(app_id: int):
 
     delete_app(algod_client, creator_private_key, app_id)
-
-    # clear application from user account
-    clear_app(algod_client, user_private_key, app_id)
