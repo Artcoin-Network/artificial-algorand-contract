@@ -39,6 +39,9 @@ class AlgoAcc:
     def print_mnemonics(self) -> None:
         print(self.__mnemonics)
 
+    def request_mnemonics(self) -> str:
+        return self.__mnemonics
+
 
 def algo_acc_test():
     test_addr = "Z2CNMQ6JQQUBEOOJRDHTWVHJX55ZL7CRILNNBICBFY6Q5V7OFDG2IBYVFM"

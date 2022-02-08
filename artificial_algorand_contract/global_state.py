@@ -48,7 +48,7 @@ class ClientInfo:
         self.client_type = client_type
         if client_type == "pure_stake":
             self.algod_address = "https://testnet-algorand.api.purestake.io/ps2"
-            assert PURE_STAKE_API_KEY
+            assert bool(PURE_STAKE_API_KEY)
             self.algod_token = PURE_STAKE_API_KEY
             self.headers = {
                 "X-API-Key": self.algod_token,
