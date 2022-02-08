@@ -1,4 +1,4 @@
-from typing import TypedDict, Any as Any_type, Optional
+from typing import Literal, TypedDict, Any as Any_type, Optional
 from ..typed_algosdk import account, mnemonic
 
 """ TYPING """
@@ -47,19 +47,8 @@ class AlgoAcc:
         return self.__mnemonics
 
 
-class TealNoOpArgs(TypedDict):
-    """
-    Args for the no-op application
-
-    Args:
-        name (str): Name of the function to call
-        args (tuple[str]): Tuple of arguments
-    """
-
-    name: str
-    args: list[Any_type]
-
-
+# TODO: Args can be number? How to encode?
+TealNoOpArgs = list[Literal["string"] | str]
 TealCmdList = list[TealNoOpArgs]
 
 

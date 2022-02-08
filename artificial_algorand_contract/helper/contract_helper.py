@@ -1,5 +1,6 @@
 """ from https://raw.githubusercontent.com/algorand/docs/master/examples/smart_contracts/v2/python/stateful_smart_contracts.py """
 import base64
+from typing import Literal, overload
 
 from algosdk import account, mnemonic
 from algosdk.future import transaction
@@ -7,7 +8,7 @@ from algosdk.v2client.algod import AlgodClient
 
 from ..counter import counter_package  # TODO: dynamic imports by name.
 from ..global_state import TestAccounts, algo_config
-from .classes.algorand import TealPackage
+from .classes.algorand import AlgoAcc, TealNoOpArgs, TealPackage
 from .transaction_helper import get_default_params, wait_for_confirmation
 
 # initialize an algodClient
@@ -358,6 +359,17 @@ class TealTester:
         self.accounts = algo_config.accounts
         self.appid = self.create()
 
+    def str_account(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
+        if isinstance(account, AlgoAcc):
+            acc = account
+        elif account == "main":
+            acc = self.accounts.main
+        elif account == "alice":
+            acc = self.accounts.alice
+        elif account == "bob":
+            acc = self.accounts.bob
+        return acc
+
     def create(self) -> int:
         appid = create_app(
             client=self.client,
@@ -373,3 +385,24 @@ class TealTester:
         )
         self.appid = appid
         return appid
+
+    def opt_in(
+        self,
+        account: Literal["main", "alice", "bob"] | AlgoAcc,
+    ) -> None:
+        sk = self.str_account(account).get_secret_key()
+        opt_in_app(self.client, sk, self.appid)
+
+    def call(
+        self,
+        account: Literal["main", "alice", "bob"] | AlgoAcc,
+        args: TealNoOpArgs,
+    ):
+        # app_args = [args..encode("utf-8")]
+        # TODO: add args check
+        call_app(
+            client=self.client,
+            private_key=self.str_account(account).get_secret_key(),
+            index=self.appid,
+            app_args=[arg.encode("utf-8") for arg in args],
+        )
