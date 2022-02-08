@@ -1,10 +1,12 @@
 """ from https://raw.githubusercontent.com/algorand/docs/master/examples/smart_contracts/v2/python/stateful_smart_contracts.py """
 import base64
-from typing import Literal, overload
+from typing import Literal, TypedDict, overload
 
 from algosdk import account, mnemonic
 from algosdk.future import transaction
 from algosdk.v2client.algod import AlgodClient
+
+from artificial_algorand_contract.helper.external import open_algo_explorer
 
 from ..global_state import TestAccounts, algo_config
 from .classes.algorand import AlgoAcc, TealNoOpArgs, TealPackage
@@ -346,13 +348,19 @@ def test_clean_up(app_id: int):
     delete_app(algod_client, creator_private_key, app_id)
 
 
+class TealTesterSetting(TypedDict):
+    no_browser: bool
+
+
 class TealTester:
-    appid: int
+    app_id: int
     accounts: TestAccounts
     client: AlgodClient
     teal: TealPackage
 
-    def __init__(self, teal_package: TealPackage, app_id: int = None):
+    def __init__(
+        self, teal_package: TealPackage, app_id: int = None, settings: TypedDict = None
+    ):
         from ..global_state import algo_config, config_initialized
 
         assert config_initialized
@@ -360,10 +368,11 @@ class TealTester:
         self.client = algo_config.client
         self.accounts = algo_config.accounts
         if app_id is None:
-            self.appid = self.create()
+            self.app_id = self.create()
         else:
-            self.appid = app_id
-        print("TestAccounts initiated")  ##devprint
+            self.app_id = app_id
+        if settings is None or not settings["no_browser"]:
+            open_algo_explorer(self.app_id)
 
     def _literal_to_account(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
         if isinstance(account, AlgoAcc):
@@ -389,7 +398,7 @@ class TealTester:
                 self.teal.param["local_ints"], self.teal.param["local_bytes"]
             ),
         )
-        self.appid = appid
+        self.app_id = appid
         return appid
 
     def opt_in(
@@ -397,7 +406,7 @@ class TealTester:
         account: Literal["main", "alice", "bob"] | AlgoAcc,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
-        opt_in_app(self.client, sk, self.appid)
+        opt_in_app(self.client, sk, self.app_id)
 
     def call(
         self,
@@ -409,7 +418,7 @@ class TealTester:
         call_app(
             client=self.client,
             private_key=self._literal_to_account(account).get_secret_key(),
-            index=self.appid,
+            index=self.app_id,
             app_args=[arg.encode("utf-8") for arg in args],
         )
 
@@ -418,7 +427,7 @@ class TealTester:
         update_app(
             client=self.client,
             private_key=self.accounts.main.get_secret_key(),
-            app_id=self.appid,
+            app_id=self.app_id,
             approval_program=compile_program(self.client, self.teal.approval),
             clear_program=compile_program(self.client, self.teal.clear),
         )
@@ -427,13 +436,13 @@ class TealTester:
         delete_app(
             client=self.client,
             private_key=self.accounts.main.get_secret_key(),
-            index=self.appid,
+            index=self.app_id,
         )
 
     def read_local_state(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
         addr = self._literal_to_account(account).addr
-        read_local_state(self.client, addr, self.appid)
+        read_local_state(self.client, addr, self.app_id)
 
     def read_global_state(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
         addr = self._literal_to_account(account).addr
-        read_global_state(self.client, addr, self.appid)
+        read_global_state(self.client, addr, self.app_id)

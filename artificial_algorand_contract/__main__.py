@@ -3,7 +3,7 @@ from .counter import counter_package
 
 # from .global_state import algo_config
 
-tester = TealTester(counter_package, 69871648)
+tester = TealTester(counter_package)
 tester.delete()
 
 # full_contract_test()
