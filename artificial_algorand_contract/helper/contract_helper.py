@@ -419,6 +419,13 @@ class TealTester:
             clear_program=self.teal.clear,
         )
 
+    def delete(self):
+        delete_app(
+            client=self.client,
+            private_key=self.accounts.main.get_secret_key(),
+            index=self.appid,
+        )
+
     def read_local_state(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
         addr = self._literal_to_account(account).addr
         read_local_state(self.client, addr, self.appid)
