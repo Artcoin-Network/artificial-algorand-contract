@@ -14,12 +14,9 @@ from ..global_state import algo_config
 # txn = transaction.ApplicationOptInTxn(sender=state.accounts.main.addr, params=, index)
 
 # user declared account mnemonics
-creator_mnemonic = "Your 25-word mnemonic goes here"
-user_mnemonic = "A second distinct 25-word mnemonic goes here"
+creator_mnemonic = algo_config.accounts.main.request_mnemonics()
+user_mnemonic = algo_config.accounts.bob.request_mnemonics()
 
-# user declared algod connection parameters
-algod_address = "http://localhost:4001"
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 # declare application state storage (immutable)
 local_ints = 1
@@ -66,7 +63,7 @@ err
 handle_noop:
 // Handle NoOp
 // Check for creator
-addr 5XWY6RBNYHCSY2HK5HCTO62DUJJ4PT3G4L77FQEBUKE6ZYRGQAFTLZSQQ4
+addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
 txn Sender
 ==
 bnz handle_optin
@@ -121,14 +118,14 @@ return
 
 handle_deleteapp:
 // Check for creator
-addr 5XWY6RBNYHCSY2HK5HCTO62DUJJ4PT3G4L77FQEBUKE6ZYRGQAFTLZSQQ4
+addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
 txn Sender
 ==
 return
 
 handle_updateapp:
 // Check for creator
-addr 5XWY6RBNYHCSY2HK5HCTO62DUJJ4PT3G4L77FQEBUKE6ZYRGQAFTLZSQQ4
+addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
 txn Sender
 ==
 return
@@ -172,7 +169,7 @@ err
 handle_noop:
 // Handle NoOp
 // Check for creator
-addr 5XWY6RBNYHCSY2HK5HCTO62DUJJ4PT3G4L77FQEBUKE6ZYRGQAFTLZSQQ4
+addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
 txn Sender
 ==
 bnz handle_optin
@@ -234,14 +231,14 @@ return
 
 handle_deleteapp:
 // Check for creator
-addr 5XWY6RBNYHCSY2HK5HCTO62DUJJ4PT3G4L77FQEBUKE6ZYRGQAFTLZSQQ4
+addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
 txn Sender
 ==
 return
 
 handle_updateapp:
 // Check for creator
-addr 5XWY6RBNYHCSY2HK5HCTO62DUJJ4PT3G4L77FQEBUKE6ZYRGQAFTLZSQQ4
+addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
 txn Sender
 ==
 return
@@ -533,9 +530,9 @@ def clear_app(client, private_key, index):
     print("Cleared app-id: ", transaction_response["txn"]["txn"]["apid"])
 
 
-def main():
+def full_contract_test():
     # initialize an algodClient
-    algod_client = algod.AlgodClient(algod_token, algod_address)
+    algod_client = algo_config.client
 
     # define private keys
     creator_private_key = get_private_key_from_mnemonic(creator_mnemonic)
@@ -606,6 +603,3 @@ def main():
 
     # clear application from user account
     clear_app(algod_client, user_private_key, app_id)
-
-
-main()
