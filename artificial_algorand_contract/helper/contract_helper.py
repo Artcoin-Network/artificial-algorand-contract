@@ -1,20 +1,16 @@
 """ from https://raw.githubusercontent.com/algorand/docs/master/examples/smart_contracts/v2/python/stateful_smart_contracts.py """
 import base64
-import datetime
 
 from algosdk import account, mnemonic
 from algosdk.future import transaction
-from algosdk.v2client import algod  # for typing
+from algosdk.v2client.algod import AlgodClient
 
-from ..counter import counter_package  # TODO: use a func to dynamic imports by name.
-from ..global_state import algo_config
-
-# global_schema = transaction.StateSchema(teal["global_ints"], teal["global_bytes"])
-# local_schema = transaction.StateSchema(teal["local_ints"], teal["local_bytes"])
-# txn = transaction.ApplicationOptInTxn(sender=state.accounts.main.addr, params=, index)
+from ..counter import counter_package  # TODO: dynamic imports by name.
+from ..global_state import TestAccounts, algo_config
+from .classes.algorand import TealPackage
+from .transaction_helper import get_default_params, wait_for_confirmation
 
 # initialize an algodClient
-# algod_client = algo_config.client
 # user declared account mnemonics
 creator_mnemonic = algo_config.accounts.main.request_mnemonics()
 user_mnemonic = algo_config.accounts.bob.request_mnemonics()
@@ -36,39 +32,13 @@ approval_program_source_refactored = counter_package.approval
 clear_program_source = counter_package.clear
 
 # helper function to compile program source
-def compile_program(client: algod.AlgodClient, source_code: str):
+def compile_program(client: AlgodClient, source_code: str):
     return base64.b64decode(client.compile(source_code))
-
-
-def get_default_params(client: algod.AlgodClient = algo_config.client):
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
-    return params
-
-
-# helper function that waits for a given txid to be confirmed by the network
-def wait_for_confirmation(client, txid):
-    last_round = client.status().get("last-round")
-    txinfo = client.pending_transaction_info(txid)
-    while not (txinfo.get("confirmed-round") and txinfo.get("confirmed-round") > 0):
-        print("Waiting for confirmation...")
-        last_round += 1
-        client.status_after_block(last_round)
-        txinfo = client.pending_transaction_info(txid)
-    print(
-        "Transaction {} confirmed in round {}.".format(
-            txid, txinfo.get("confirmed-round")
-        )
-    )
-    return txinfo
 
 
 # create new application
 def create_app(
-    client: algod.AlgodClient,
+    client: AlgodClient,
     private_key,
     approval_program,
     clear_program,
@@ -81,7 +51,7 @@ def create_app(
     # declare on_complete as NoOp
     on_complete = transaction.OnComplete.NoOpOC.real
 
-    params = get_default_params()
+    params = get_default_params(client)
 
     # create unsigned transaction
     txn = transaction.ApplicationCreateTxn(
@@ -113,12 +83,12 @@ def create_app(
 
 
 # opt-in to application
-def opt_in_app(client, private_key, index):
+def opt_in_app(client: AlgodClient, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
     print("OptIn from account: ", sender)
 
-    params = get_default_params()
+    params = get_default_params(client)
 
     # create unsigned transaction
     txn = transaction.ApplicationOptInTxn(sender, params, index)
@@ -139,12 +109,12 @@ def opt_in_app(client, private_key, index):
 
 
 # call application
-def call_app(client, private_key, index, app_args):
+def call_app(client: AlgodClient, private_key, index, app_args):
     # declare sender
     sender = account.address_from_private_key(private_key)
     print("Call from account: ", sender)
 
-    params = get_default_params()
+    params = get_default_params(client)
     # create unsigned transaction
     txn = transaction.ApplicationNoOpTxn(sender, params, index, app_args)
 
@@ -168,7 +138,7 @@ def call_app(client, private_key, index, app_args):
 
 
 # read user local state
-def read_local_state(client, addr, app_id):
+def read_local_state(client: AlgodClient, addr, app_id):
     results = client.account_info(addr)
     local_state = results["apps-local-state"][0]
     for index in local_state:
@@ -180,7 +150,7 @@ def read_local_state(client, addr, app_id):
 
 
 # read app global state
-def read_global_state(client, addr, app_id):
+def read_global_state(client: AlgodClient, addr, app_id):
     results = client.account_info(addr)
     apps_created = results["created-apps"]
     for app in apps_created:
@@ -189,14 +159,16 @@ def read_global_state(client, addr, app_id):
 
 
 # update existing application
-def update_app(client, private_key, app_id, approval_program, clear_program):
+def update_app(
+    client: AlgodClient, private_key, app_id, approval_program, clear_program
+):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
     #    # define initial value for key "timestamp"
     #    app_args = [b'initial value']
 
-    params = get_default_params()
+    params = get_default_params(client)
 
     # create unsigned transaction
     txn = transaction.ApplicationUpdateTxn(
@@ -220,11 +192,11 @@ def update_app(client, private_key, app_id, approval_program, clear_program):
 
 
 # delete application
-def delete_app(client, private_key, index):
+def delete_app(client: AlgodClient, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
-    params = get_default_params()
+    params = get_default_params(client)
 
     # create unsigned transaction
     txn = transaction.ApplicationDeleteTxn(sender, params, index)
@@ -245,11 +217,11 @@ def delete_app(client, private_key, index):
 
 
 # close out from application
-def close_out_app(client, private_key, index):
+def close_out_app(client: AlgodClient, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
-    params = get_default_params()
+    params = get_default_params(client)
 
     # create unsigned transaction
     txn = transaction.ApplicationCloseOutTxn(sender, params, index)
@@ -270,11 +242,11 @@ def close_out_app(client, private_key, index):
 
 
 # clear application
-def clear_app(client, private_key, index):
+def clear_app(client: AlgodClient, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
-    params = get_default_params()
+    params = get_default_params(client)
 
     # create unsigned transaction
     txn = transaction.ApplicationClearStateTxn(sender, params, index)
@@ -369,3 +341,35 @@ def full_contract_test():
 def test_clean_up(app_id: int):
     algod_client = algo_config.client
     delete_app(algod_client, creator_private_key, app_id)
+
+
+class TealTester:
+    appid: int
+    accounts: TestAccounts
+    client: AlgodClient
+    teal: TealPackage
+
+    def __init__(self, teal_package: TealPackage):
+        from ..global_state import algo_config, config_initialized
+
+        assert config_initialized
+        self.teal = teal_package
+        self.client = algo_config.client
+        self.accounts = algo_config.accounts
+        self.appid = self.create()
+
+    def create(self) -> int:
+        appid = create_app(
+            client=self.client,
+            private_key=self.accounts.main.get_secret_key(),
+            approval_program=self.teal.approval,
+            clear_program=self.teal,
+            global_schema=transaction.StateSchema(
+                self.teal.param["global_ints"], self.teal.param["global_bytes"]
+            ),
+            local_schema=transaction.StateSchema(
+                self.teal.param["local_ints"], self.teal.param["local_bytes"]
+            ),
+        )
+        self.appid = appid
+        return appid
