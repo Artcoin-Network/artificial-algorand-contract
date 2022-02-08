@@ -4,7 +4,6 @@ import datetime
 
 from algosdk import account, mnemonic
 from algosdk.future import transaction
-from algosdk.v2client import algod
 
 from ..counter import teal  # TODO: use a func to dynamic imports by name.
 from ..global_state import algo_config
@@ -13,252 +12,32 @@ from ..global_state import algo_config
 # local_schema = transaction.StateSchema(teal["local_ints"], teal["local_bytes"])
 # txn = transaction.ApplicationOptInTxn(sender=state.accounts.main.addr, params=, index)
 
+# initialize an algodClient
+algod_client = algo_config.client
 # user declared account mnemonics
 creator_mnemonic = algo_config.accounts.main.request_mnemonics()
 user_mnemonic = algo_config.accounts.bob.request_mnemonics()
+# define private keys
+creator_private_key = mnemonic.to_private_key(creator_mnemonic)
+user_private_key = mnemonic.to_private_key(user_mnemonic)
 
 
 # declare application state storage (immutable)
-local_ints = 1
-local_bytes = 1
+local_ints = 0
+local_bytes = 0
 global_ints = 1
 global_bytes = 0
 global_schema = transaction.StateSchema(global_ints, global_bytes)
 local_schema = transaction.StateSchema(local_ints, local_bytes)
 
-# user declared approval program (initial)
-approval_program_source_initial = b"""#pragma version 2
-// Handle each possible OnCompletion type. We don't have to worry about
-// handling ClearState, because the ClearStateProgram will execute in that
-// case, not the ApprovalProgram.
-
-txn OnCompletion
-int NoOp
-==
-bnz handle_noop
-
-txn OnCompletion
-int OptIn
-==
-bnz handle_optin
-
-txn OnCompletion
-int CloseOut
-==
-bnz handle_closeout
-
-txn OnCompletion
-int UpdateApplication
-==
-bnz handle_updateapp
-
-txn OnCompletion
-int DeleteApplication
-==
-bnz handle_deleteapp
-
-// Unexpected OnCompletion value. Should be unreachable.
-err
-
-handle_noop:
-// Handle NoOp
-// Check for creator
-addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
-txn Sender
-==
-bnz handle_optin
-
-// read global state
-byte "counter"
-dup
-app_global_get
-
-// increment the value
-int 1
-+
-
-// store to scratch space
-dup
-store 0
-
-// update global state
-app_global_put
-
-// read local state for sender
-int 0
-byte "counter"
-app_local_get
-
-// increment the value
-int 1
-+
-store 1
-
-// update local state for sender
-int 0
-byte "counter"
-load 1
-app_local_put
-
-// load return value as approval
-load 0
-return
-
-handle_optin:
-// Handle OptIn
-// approval
-int 1
-return
-
-handle_closeout:
-// Handle CloseOut
-//approval
-int 1
-return
-
-handle_deleteapp:
-// Check for creator
-addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
-txn Sender
-==
-return
-
-handle_updateapp:
-// Check for creator
-addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
-txn Sender
-==
-return
-
-"""
-
-# user declared approval program (refactored)
-approval_program_source_refactored = b"""#pragma version 2
-// Handle each possible OnCompletion type. We don't have to worry about
-// handling ClearState, because the ClearStateProgram will execute in that
-// case, not the ApprovalProgram.
-
-txn OnCompletion
-int NoOp
-==
-bnz handle_noop
-
-txn OnCompletion
-int OptIn
-==
-bnz handle_optin
-
-txn OnCompletion
-int CloseOut
-==
-bnz handle_closeout
-
-txn OnCompletion
-int UpdateApplication
-==
-bnz handle_updateapp
-
-txn OnCompletion
-int DeleteApplication
-==
-bnz handle_deleteapp
-
-// Unexpected OnCompletion value. Should be unreachable.
-err
-
-handle_noop:
-// Handle NoOp
-// Check for creator
-addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
-txn Sender
-==
-bnz handle_optin
-
-// read global state
-byte "counter"
-dup
-app_global_get
-
-// increment the value
-int 1
-+
-
-// store to scratch space
-dup
-store 0
-
-// update global state
-app_global_put
-
-// read local state for sender
-int 0
-byte "counter"
-app_local_get
-
-// increment the value
-int 1
-+
-store 1
-
-// update local state for sender
-// update "counter"
-int 0
-byte "counter"
-load 1
-app_local_put
-
-// update "timestamp"
-int 0
-byte "timestamp"
-txn ApplicationArgs 0
-app_local_put
-
-// load return value as approval
-load 0
-return
-
-handle_optin:
-// Handle OptIn
-// approval
-int 1
-return
-
-handle_closeout:
-// Handle CloseOut
-//approval
-int 1
-return
-
-handle_deleteapp:
-// Check for creator
-addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
-txn Sender
-==
-return
-
-handle_updateapp:
-// Check for creator
-addr P4ETAJS3DX6DWDLLLIMIISOE7ZGDQ67PKC6LCFK3CRQU4VRDI6S2OVC2OU
-txn Sender
-==
-return
-"""
-
-# declare clear state program source
-clear_program_source = b"""#pragma version 2
-int 1
-"""
+approval_program_source_initial = bytes(teal["approval"], "utf-8")
+approval_program_source_refactored = bytes(teal["approval"], "utf-8")
+clear_program_source = bytes(teal["clear"], "utf-8")
 
 # helper function to compile program source
 def compile_program(client, source_code):
     compile_response = client.compile(source_code.decode("utf-8"))
     return base64.b64decode(compile_response["result"])
-
-
-# helper function that converts a mnemonic passphrase into a private signing key
-def get_private_key_from_mnemonic(mn):
-    private_key = mnemonic.to_private_key(mn)
-    return private_key
 
 
 # helper function that waits for a given txid to be confirmed by the network
@@ -531,12 +310,6 @@ def clear_app(client, private_key, index):
 
 
 def full_contract_test():
-    # initialize an algodClient
-    algod_client = algo_config.client
-
-    # define private keys
-    creator_private_key = get_private_key_from_mnemonic(creator_mnemonic)
-    user_private_key = get_private_key_from_mnemonic(user_mnemonic)
 
     # compile programs
     approval_program = compile_program(algod_client, approval_program_source_initial)
@@ -599,6 +372,14 @@ def full_contract_test():
     )
 
     # delete application
+    delete_app(algod_client, creator_private_key, app_id)
+
+    # clear application from user account
+    clear_app(algod_client, user_private_key, app_id)
+
+
+def test_clean_up(app_id: int):
+
     delete_app(algod_client, creator_private_key, app_id)
 
     # clear application from user account
