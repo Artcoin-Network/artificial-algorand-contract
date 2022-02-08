@@ -51,6 +51,10 @@ def approval_program():
 
     handle_noop = Cond(
         [
+            Txn.application_args.length() == Int(0),
+            Return(Int(1)),
+        ],
+        [
             And(Global.group_size() == Int(1), Txn.application_args[0] == Bytes("Add")),
             add,
         ],
