@@ -4,6 +4,7 @@ import datetime
 
 from algosdk import account, mnemonic
 from algosdk.future import transaction
+from algosdk.v2client import algod  # for typing
 
 from ..counter import teal  # TODO: use a func to dynamic imports by name.
 from ..global_state import algo_config
@@ -13,7 +14,7 @@ from ..global_state import algo_config
 # txn = transaction.ApplicationOptInTxn(sender=state.accounts.main.addr, params=, index)
 
 # initialize an algodClient
-algod_client = algo_config.client
+# algod_client = algo_config.client
 # user declared account mnemonics
 creator_mnemonic = algo_config.accounts.main.request_mnemonics()
 user_mnemonic = algo_config.accounts.bob.request_mnemonics()
@@ -40,6 +41,15 @@ def compile_program(client, source_code):
     return base64.b64decode(compile_response["result"])
 
 
+def get_default_params(client: algod.AlgodClient = algo_config.client):
+    # get node suggested parameters
+    params = client.suggested_params()
+    # comment out the next two (2) lines to use suggested fees
+    params.flat_fee = True
+    params.fee = 1000
+    return params
+
+
 # helper function that waits for a given txid to be confirmed by the network
 def wait_for_confirmation(client, txid):
     last_round = client.status().get("last-round")
@@ -59,7 +69,12 @@ def wait_for_confirmation(client, txid):
 
 # create new application
 def create_app(
-    client, private_key, approval_program, clear_program, global_schema, local_schema
+    client: algod.AlgodClient,
+    private_key,
+    approval_program,
+    clear_program,
+    global_schema,
+    local_schema,
 ):
     # define sender as creator
     sender = account.address_from_private_key(private_key)
@@ -67,11 +82,7 @@ def create_app(
     # declare on_complete as NoOp
     on_complete = transaction.OnComplete.NoOpOC.real
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
+    params = get_default_params()
 
     # create unsigned transaction
     txn = transaction.ApplicationCreateTxn(
@@ -108,11 +119,7 @@ def opt_in_app(client, private_key, index):
     sender = account.address_from_private_key(private_key)
     print("OptIn from account: ", sender)
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
+    params = get_default_params()
 
     # create unsigned transaction
     txn = transaction.ApplicationOptInTxn(sender, params, index)
@@ -138,12 +145,7 @@ def call_app(client, private_key, index, app_args):
     sender = account.address_from_private_key(private_key)
     print("Call from account: ", sender)
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
-
+    params = get_default_params()
     # create unsigned transaction
     txn = transaction.ApplicationNoOpTxn(sender, params, index, app_args)
 
@@ -195,11 +197,7 @@ def update_app(client, private_key, app_id, approval_program, clear_program):
     #    # define initial value for key "timestamp"
     #    app_args = [b'initial value']
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
+    params = get_default_params()
 
     # create unsigned transaction
     txn = transaction.ApplicationUpdateTxn(
@@ -227,11 +225,7 @@ def delete_app(client, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
+    params = get_default_params()
 
     # create unsigned transaction
     txn = transaction.ApplicationDeleteTxn(sender, params, index)
@@ -256,11 +250,7 @@ def close_out_app(client, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
+    params = get_default_params()
 
     # create unsigned transaction
     txn = transaction.ApplicationCloseOutTxn(sender, params, index)
@@ -285,11 +275,7 @@ def clear_app(client, private_key, index):
     # declare sender
     sender = account.address_from_private_key(private_key)
 
-    # get node suggested parameters
-    params = client.suggested_params()
-    # comment out the next two (2) lines to use suggested fees
-    params.flat_fee = True
-    params.fee = 1000
+    params = get_default_params()
 
     # create unsigned transaction
     txn = transaction.ApplicationClearStateTxn(sender, params, index)
@@ -310,6 +296,7 @@ def clear_app(client, private_key, index):
 
 
 def full_contract_test():
+    algod_client = algo_config.client
 
     # compile programs
     approval_program = compile_program(algod_client, approval_program_source_initial)
@@ -348,8 +335,10 @@ def full_contract_test():
     )
 
     # call application with arguments
-    now = datetime.datetime.now().strftime("%H:%M:%S")
-    app_args = [now.encode("utf-8")]
+    # now = datetime.datetime.now().strftime("%H:%M:%S")
+    # app_args = [now.encode("utf-8")]
+    args = "Add"
+    app_args = [args.encode("utf-8")]
     call_app(algod_client, user_private_key, app_id, app_args)
 
     # read local state of application from user account
@@ -379,5 +368,5 @@ def full_contract_test():
 
 
 def test_clean_up(app_id: int):
-
+    algod_client = algo_config.client
     delete_app(algod_client, creator_private_key, app_id)
