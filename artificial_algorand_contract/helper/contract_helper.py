@@ -352,14 +352,18 @@ class TealTester:
     client: AlgodClient
     teal: TealPackage
 
-    def __init__(self, teal_package: TealPackage):
+    def __init__(self, teal_package: TealPackage, app_id: int = None):
         from ..global_state import algo_config, config_initialized
 
         assert config_initialized
         self.teal = teal_package
         self.client = algo_config.client
         self.accounts = algo_config.accounts
-        self.appid = self.create()
+        if app_id is None:
+            self.appid = self.create()
+        else:
+            self.appid = app_id
+        print("TestAccounts initiated")  ##devprint
 
     def _literal_to_account(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
         if isinstance(account, AlgoAcc):
