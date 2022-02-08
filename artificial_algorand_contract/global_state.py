@@ -20,12 +20,12 @@ state_initialized = False
 
 
 class TestAccounts:
-    main_account: AlgoAcc
+    main: AlgoAcc
     alice: AlgoAcc
     bob: AlgoAcc
 
     def __init__(self) -> None:
-        self.main_account = AlgoAcc(
+        self.main = AlgoAcc(
             mnemonics=ACCOUNT1_MNEMONICS,
             address=ACCOUNT1_ADDRESS,
         )
@@ -64,8 +64,10 @@ class ClientInfo:
             raise ValueError(f"client_type={client_type} not supported.")
 
 
-class State:
+class AlgoConfig:
     accounts: TestAccounts
+    client_info: ClientInfo
+    client: algod.AlgodClient
 
     def __init__(self, client_type: Client_Type) -> None:
         global state_initialized
@@ -85,4 +87,4 @@ class State:
         pass
 
 
-state = State(client_type="pure_stake")
+algo_config = AlgoConfig(client_type="pure_stake")
