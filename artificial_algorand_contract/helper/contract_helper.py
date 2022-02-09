@@ -1,5 +1,4 @@
 """ from https://raw.githubusercontent.com/algorand/docs/master/examples/smart_contracts/v2/python/stateful_smart_contracts.py """
-# TODO 0209: Add feat clear, close_out_app, clear_app
 # TODO 0209: Fix local state read etc.
 # TODO 0209: Add new contract for escrow.
 
@@ -418,6 +417,20 @@ class TealTester:
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         opt_in_app(self.client, sk, self.app_id)
+
+    def close_out(
+        self,
+        account: Literal["main", "alice", "bob"] | AlgoAcc = None,
+    ) -> None:
+        sk = self._literal_to_account(account).get_secret_key()
+        close_out_app(self.client, sk, self.app_id)
+
+    def clear(
+        self,
+        account: Literal["main", "alice", "bob"] | AlgoAcc = None,
+    ) -> None:
+        sk = self._literal_to_account(account).get_secret_key()
+        clear_app(self.client, sk, self.app_id)
 
     def call(
         self,
