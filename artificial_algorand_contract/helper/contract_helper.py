@@ -1,4 +1,8 @@
 """ from https://raw.githubusercontent.com/algorand/docs/master/examples/smart_contracts/v2/python/stateful_smart_contracts.py """
+# TODO 0209: Add feat clear, close_out_app, clear_app
+# TODO 0209: Fix local state read etc.
+# TODO 0209: Add new contract for escrow.
+
 import base64
 from typing import Literal, TypedDict, overload
 
@@ -122,12 +126,15 @@ def call_app(client: AlgodClient, private_key, index, app_args):
 # read user local state
 def read_local_state(client: AlgodClient, addr, app_id):
     results = client.account_info(addr)
+    print("results:", results)  ##devprint
+
     local_state = results["apps-local-state"][0]
     for index in local_state:
         if local_state[index] == app_id:
             print(
                 f"local_state of account {addr} for app_id {app_id}: ",
-                local_state["key-value"],
+                # local_state["key-value"],
+                # TODO: this key doesn't exist. Maybe old version? #pragma version 2
             )
 
 
@@ -374,8 +381,12 @@ class TealTester:
         if settings is None or not settings["no_browser"]:
             open_algo_explorer(self.app_id)
 
-    def _literal_to_account(self, account: Literal["main", "alice", "bob"] | AlgoAcc):
-        if isinstance(account, AlgoAcc):
+    def _literal_to_account(
+        self, account: None | Literal["main", "alice", "bob"] | AlgoAcc
+    ):
+        if account is None:
+            acc = self.accounts.main
+        elif isinstance(account, AlgoAcc):
             acc = account
         elif account == "main":
             acc = self.accounts.main
@@ -403,15 +414,15 @@ class TealTester:
 
     def opt_in(
         self,
-        account: Literal["main", "alice", "bob"] | AlgoAcc,
+        account: Literal["main", "alice", "bob"] | AlgoAcc = None,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         opt_in_app(self.client, sk, self.app_id)
 
     def call(
         self,
-        account: Literal["main", "alice", "bob"] | AlgoAcc,
-        args: TealNoOpArgs,
+        account: Literal["main", "alice", "bob"] | AlgoAcc = None,
+        args: TealNoOpArgs = None,
     ):
         # app_args = [args..encode("utf-8")]
         # TODO: add args check
@@ -419,7 +430,9 @@ class TealTester:
             client=self.client,
             private_key=self._literal_to_account(account).get_secret_key(),
             index=self.app_id,
-            app_args=[arg.encode("utf-8") for arg in args],
+            app_args=[arg.encode("utf-8") for arg in args]
+            if args is not None
+            else None,
         )
 
     def update(self, new_teal: TealPackage):
