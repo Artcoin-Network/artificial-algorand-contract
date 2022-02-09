@@ -1,5 +1,5 @@
 from typing import Literal
-from artificial_algorand_contract.helper.classes.algorand import AlgoAcc
+from .helper.classes.algorand import AlgoAcc
 from .helper.__secrets__ import (
     ACCOUNT1_MNEMONICS,
     ACCOUNT1_ADDRESS,

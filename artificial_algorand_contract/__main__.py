@@ -14,7 +14,5 @@ tester.delete()
 # test_clean_up(69738415)
 # test_clean_up(69730407)
 # test_clean_up(69656591)
-# from artificial_algorand_contract.helper.classes.algorand import algo_acc_test
-# algo_acc_test()
 
 print("finished")
