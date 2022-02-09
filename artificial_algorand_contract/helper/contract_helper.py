@@ -125,16 +125,20 @@ def call_app(client: AlgodClient, private_key, index, app_args):
 # read user local state
 def read_local_state(client: AlgodClient, addr, app_id):
     results = client.account_info(addr)
-    print("results:", results)  ##devprint
 
-    local_state = results["apps-local-state"][0]
-    for index in local_state:
-        if local_state[index] == app_id:
-            print(
-                f"local_state of account {addr} for app_id {app_id}: ",
-                # local_state["key-value"],
-                # TODO: this key doesn't exist. Maybe old version? #pragma version 2
-            )
+    local_state = results["apps-local-state"]
+    print(
+        f"local_state of account {addr} (showing all) for app_id {app_id}: ",
+        local_state,
+        # TODO: this key doesn't exist. Maybe old version? #pragma version 2
+    )
+    # for index in local_state:
+    #     if local_state[index] == app_id:
+    #         print(
+    #             f"local_state of account {addr} for app_id {app_id}: ",
+    #             # local_state["key-value"],
+    #             # TODO: this key doesn't exist. Maybe old version? #pragma version 2
+    #         )
 
 
 # read app global state
@@ -251,7 +255,9 @@ def clear_app(client: AlgodClient, private_key, index):
 
     # display results
     transaction_response = client.pending_transaction_info(tx_id)
-    print("Cleared app-id: ", transaction_response["txn"]["txn"]["apid"])
+    print(
+        "Cleared", sender, "from app-id: ", transaction_response["txn"]["txn"]["apid"]
+    )
 
 
 def full_contract_test():
