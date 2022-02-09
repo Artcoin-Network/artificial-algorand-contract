@@ -18,7 +18,7 @@ from pyteal import (
     compileTeal,
 )
 
-from artificial_algorand_contract.helper.classes.algorand import TealCmdList, TealParam
+from ..helper.classes.algorand import TealCmdList, TealParam
 
 """Basic Counter Application"""
 

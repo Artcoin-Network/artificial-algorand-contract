@@ -3,6 +3,7 @@
     "algod",
     "LATINUM",
     "txid",
-    "txinfo"
+    "txinfo",
+    "xfer"
   ]
 }

@@ -1,10 +1,9 @@
-from artificial_algorand_contract.fulltest import test
 from .helper.contract_helper import TealTester, clear_app, close_out_app
 from .counter import counter_package
 
-# from .global_state import algo_config
-# not deleted : 69879104
-
+# MEMO: not deleted 69879104
+# TODO0209: enable tester.acc.call()
+# TODO0209: functions like call, opt_in etc should be in the tester.acc
 
 tester = TealTester(counter_package, 69879104)
 tester.opt_in("alice")
