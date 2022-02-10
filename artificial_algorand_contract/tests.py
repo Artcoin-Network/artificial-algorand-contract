@@ -1,4 +1,4 @@
-from .classes.tester import TealTester
+from .classes.teal_tester import TealTester
 from .counter import counter_package
 
 

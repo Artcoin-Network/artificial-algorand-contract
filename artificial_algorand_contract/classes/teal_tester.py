@@ -17,7 +17,7 @@ from artificial_algorand_contract.helper.contract_helper import (
 
 from artificial_algorand_contract.helper.external import open_algo_explorer
 
-from ..global_state import TestAccounts
+from .algo_config import TestAccounts
 from .algorand import AlgoAcc, TealNoOpArgs, TealPackage
 
 
@@ -34,7 +34,7 @@ class TealTester:
     def __init__(
         self, teal_package: TealPackage, app_id: int = None, settings: TypedDict = None
     ):
-        from ..global_state import algo_config, config_initialized
+        from .algo_config import algo_config, config_initialized
 
         assert config_initialized
         self.teal = teal_package
