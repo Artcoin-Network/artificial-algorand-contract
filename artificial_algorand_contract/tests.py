@@ -2,6 +2,10 @@ from .classes.teal_tester import TealTester
 from .counter import counter_package
 
 
+def escrow_config_test():
+    pass
+
+
 def counter_full_test():
     tester = TealTester(counter_package)
     tester.opt_in("alice")
