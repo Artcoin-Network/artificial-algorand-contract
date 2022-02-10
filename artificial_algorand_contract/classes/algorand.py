@@ -1,5 +1,5 @@
 from typing import Literal, TypedDict, Any as Any_type, Optional
-from ..typed_algosdk import account, mnemonic
+from ..helper.typed_algosdk import account, mnemonic
 
 """ TYPING """
 Mnemonics = str

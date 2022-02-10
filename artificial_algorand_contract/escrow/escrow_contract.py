@@ -1,6 +1,6 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
 
-from ..helper.classes.algorand import TealCmdList, TealParam
+from ..classes.algorand import TealCmdList, TealParam
 
 
 from pyteal import (

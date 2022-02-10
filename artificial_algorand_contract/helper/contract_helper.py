@@ -12,7 +12,7 @@ from algosdk.v2client.algod import AlgodClient
 from artificial_algorand_contract.helper.external import open_algo_explorer
 
 from ..global_state import TestAccounts, algo_config
-from .classes.algorand import AlgoAcc, TealNoOpArgs, TealPackage
+from ..classes.algorand import AlgoAcc, TealNoOpArgs, TealPackage
 from .transaction_helper import get_default_params, wait_for_confirmation
 
 
