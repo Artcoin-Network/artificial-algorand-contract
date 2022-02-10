@@ -1,5 +1,13 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
 
+from artificial_algorand_contract.resources import (
+    ASSET,
+    ASSET_ID,
+    STABLE,
+    STABLE_ID,
+    SUM_ASSET,
+    SUM_STABLE,
+)
 from ..classes.algorand import TealCmdList, TealParam
 
 
@@ -24,12 +32,6 @@ from pyteal import (
     InnerTxnBuilder,
 )
 
-ASSET = "$ART$"
-SUM_ASSET = f"+{ASSET}"
-ASSET_ID = 0  # TODO: add ID
-STABLE = "aUSD"
-SUM_STABLE = f"+{STABLE}"
-STABLE_ID = 0  # TODO: add ID
 
 local_ints_scheme = [ASSET, "aUSD"]  # to check if user can burn / need escrow more
 local_bytes_scheme = ["history"]  # TODO: for more data, maybe more "blocks"?
