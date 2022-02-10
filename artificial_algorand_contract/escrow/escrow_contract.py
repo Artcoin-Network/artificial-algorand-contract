@@ -177,7 +177,7 @@ def approval_program():
         ]
     )
 
-    handle_txn = Cond(
+    handle_no_op = Cond(
         [
             And(
                 Global.group_size() == Int(1),
@@ -196,32 +196,14 @@ def approval_program():
         ],
     )
 
-    # handle_no_op = Cond(
-    #     [
-    #         Txn.application_args.length() == Int(0),
-    #         Return(Int(1)),
-    #     ],
-    #     [
-    #         And(Global.group_size() == Int(1), Txn.application_args[0] == Bytes("Add")),
-    #         escrow,
-    #     ],
-    #     [
-    #         And(
-    #             Global.group_size() == Int(1),
-    #             Txn.application_args[0] == Bytes("Deduct"),
-    #         ),
-    #         redeem,
-    #     ],
-    # )
-
     program = Cond(
         [Txn.application_id() == Int(0), handle_creation],
         [Txn.on_completion() == OnComplete.OptIn, handle_opt_in],
         [Txn.on_completion() == OnComplete.CloseOut, handle_close_out],
         [Txn.on_completion() == OnComplete.UpdateApplication, handle_update_app],
         [Txn.on_completion() == OnComplete.DeleteApplication, handle_deleteapp],
-        [Txn.on_completion() == OnComplete.NoOp, handle_txn],  # TODO: check the picture
-        # [Txn.on_completion() == OnComplete.NoOp, handle_no_op],
+        [Txn.on_completion() == OnComplete.NoOp, handle_no_op],
+        # checked picture https://github.com/algorand/docs/blob/92d2bb3929d2301e1d3acfd164b0621593fcac5b/docs/imgs/sccalltypes.png
     )
     # Mode.Application specifies that this is a smart contract
     return compileTeal(program, Mode.Application, version=5)
