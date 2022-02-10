@@ -1,4 +1,4 @@
-from .helper.contract_helper import TealTester, clear_app, close_out_app
+from .tester import TealTester
 from .counter import counter_package
 
 # MEMO: not deleted 69879104
@@ -34,5 +34,7 @@ tester.clear("alice")
 # test_clean_up(69738415)
 # test_clean_up(69730407)
 # test_clean_up(69656591)
+
+# from .helper.contract_helper import clear_app, close_out_app
 
 print("finished")
