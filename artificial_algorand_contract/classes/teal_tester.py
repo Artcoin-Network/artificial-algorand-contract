@@ -18,7 +18,7 @@ from artificial_algorand_contract.helper.contract_helper import (
 from artificial_algorand_contract.helper.external import open_algo_explorer
 
 from ..global_state import TestAccounts
-from ..classes.algorand import AlgoAcc, TealNoOpArgs, TealPackage
+from .algorand import AlgoAcc, TealNoOpArgs, TealPackage
 
 
 class TealTesterSetting(TypedDict):
