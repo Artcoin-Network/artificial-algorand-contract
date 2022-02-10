@@ -3,7 +3,7 @@ from .counter import counter_package
 
 
 def counter_full_test():
-    tester = TealTester(counter_package, 69879104)
+    tester = TealTester(counter_package)
     tester.opt_in("alice")
     tester.call("alice", None)
     tester.read_local_state("alice")
