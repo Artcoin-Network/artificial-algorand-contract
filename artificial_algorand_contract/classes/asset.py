@@ -46,8 +46,6 @@ def create_asset(
     wait_for_confirmation(client, txid)  # wait until asset is created
     txinfo = client.pending_transaction_info(txid)
     asset_id = txinfo["asset-index"]
-    account_info = client.account_info(mainAcc.addr)
-    print("account_info:", account_info)  ##devprint
 
     return asset_id
 
@@ -97,6 +95,30 @@ def create_aUSD():
     return create_asset(
         client,
         aUSD_asset_config,
+    )
+
+
+test_asset_config: AssetConfig = {
+    # TODO: this should load from env file
+    "sender": mainAcc.addr,
+    # there's no params (sp)
+    "total": 1234_000000,
+    "default_frozen": False,
+    "unit_name": "test",
+    "asset_name": "test",
+    "manager": mainAcc.addr,
+    "reserve": mainAcc.addr,
+    "freeze": mainAcc.addr,
+    "clawback": mainAcc.addr,
+    "url": "https://artcoin.network/",
+    "decimals": 5,  # For 1>>16 unit in contract. More decimals causes inaccuracy.
+}
+
+
+def create_test_asset():
+    return create_asset(
+        client,
+        test_asset_config,
     )
 
 
