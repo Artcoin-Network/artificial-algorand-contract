@@ -1,4 +1,3 @@
-from .tests import counter_full_test
 from .classes.teal_tester import TealTester
 from .counter import counter_package
 
@@ -6,5 +5,4 @@ from .counter import counter_package
 # TODO0209: enable tester.acc.call()
 # TODO0209: functions like call, opt_in etc should be in the tester.acc
 
-counter_full_test()
 print("finished")

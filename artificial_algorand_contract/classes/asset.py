@@ -1,13 +1,15 @@
+""" TODO: add an Asset Class (optionally initiate with asset_id)"""
 from typing import TypedDict
-from unicodedata import decimal
-from ..helper.transaction_helper import wait_for_confirmation, get_default_params
-from .algorand import AlgoAcc
-from .algo_config import AlgoConfig
+
 from algosdk.future.transaction import AssetConfigTxn
 from algosdk.v2client.algod import AlgodClient
 
-client = AlgoConfig.client
-mainAcc: AlgoAcc = AlgoConfig.accounts.main
+from ..helper.transaction_helper import get_default_params, wait_for_confirmation
+from .algo_config import algo_config
+from .algorand import AlgoAcc
+
+client = algo_config.client
+mainAcc: AlgoAcc = algo_config.accounts.main
 
 
 class AssetConfig(TypedDict):
@@ -37,10 +39,13 @@ def create_asset(
     signed_txn = txn.sign(mainAcc.get_secret_key())
     txid = client.send_transaction(signed_txn)
     print(txid)
-    ptx = client.pending_transaction_info(txid)
-    asset_id = ptx["asset-index"]
+    # ptx = client.pending_transaction_info(txid) There's no info about asset ID.
+    # print(ptx)
+    # asset_id = ptx["asset-index"]
 
     wait_for_confirmation(client, txid)  # wait until asset is created
+    txinfo = client.pending_transaction_info(txid)
+    asset_id = txinfo["asset-index"]
     account_info = client.account_info(mainAcc.addr)
     print("account_info:", account_info)  ##devprint
 
@@ -96,5 +101,11 @@ def create_aUSD():
 
 
 def create_run_once():
-    create_ART()
-    create_aUSD()
+    ASSET_ID = create_ART()
+    STABLE_ID = create_aUSD()
+    print(f"created asset {ASSET_ID}, stable {STABLE_ID}")
+    print("create_run_once done")
+    return {
+        "ASSET_ID": ASSET_ID,
+        "STABLE_ID": STABLE_ID,
+    }
