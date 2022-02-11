@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PabloLION/symmetric-secret-share/main/res/sss.schema.json",
+  "sss_version": "0.0.8",
+  "config_id": "artificial-dev-console",
+  "key_identifier": "test_key",
+  "last_key_rotation": 0,
+  "files": [
+    {
+      "source": "https://raw.githubusercontent.com/Artcoin-Network/secret-config-share/main/secret1",
+      "target": "./secret.env"
+    }
+  ]
+}
