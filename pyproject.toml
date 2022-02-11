@@ -8,6 +8,8 @@ version = "0.0.1"
 pyteal = {extras = ["all"], version = "^0.9.1"}
 python = "^3.10"
 python-dotenv = "^0.19.2"
+black = "^22.1.0"
+symmetric-secret-share = "^0.0.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

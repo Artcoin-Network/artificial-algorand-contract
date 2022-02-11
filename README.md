@@ -2,17 +2,10 @@
 
 ## installation
 
-- python venv with [poetry](https://python-poetry.org/) `poetry shell`. [Poetry Install Guide](https://python-poetry.org/docs/master/#installing-with-the-official-installer)
-- [ ] use artificial-dev-console
-- [ ] use [symmetric-secrete-share](https://github.com/PabloLION/symmetric-secrete-share)
-- [ ] TODO: finish docs on these two.
-
-  ```shellscript
-  python3 -m venv algovenv
-  source algovenv/bin/activate
-  # should see (algovenv) in the terminal after this
-  pip install py-algorand-sdk pyteal
-  ```
+1. Install [Poetry](https://python-poetry.org/) with [Poetry Install Guide](https://python-poetry.org/docs/master/#installing-with-the-official-installer)
+2. Initiate Poetry: `poetry shell`
+3. Activate python venv:
+4. Use [symmetric-secret-share](https://github.com/PabloLION/symmetric-secret-share) (installed by poetry), `sss inject ./sss.json`
 
 ## NEED FIX
 
@@ -37,23 +30,3 @@ This chapter focus on developing this tool, not using it.
 ### pip list
 
 `pip install py-algorand-sdk pyteal black`
-
-| Package           | Version |
-| ----------------- | ------- |
-| black             | 21.12b0 |
-| cffi              | 1.15.0  |
-| click             | 8.0.3   |
-| msgpack           | 1.0.3   |
-| mypy-extensions   | 0.4.3   |
-| pathspec          | 0.9.0   |
-| pip               | 21.3.1  |
-| platformdirs      | 2.4.0   |
-| py-algorand-sdk   | 1.8.0   |
-| pycparser         | 2.21    |
-| pycryptodomex     | 3.12.0  |
-| PyNaCl            | 1.4.0   |
-| pyteal            | 0.9.1   |
-| setuptools        | 59.0.1  |
-| six               | 1.16.0  |
-| tomli             | 1.2.3   |
-| typing_extensions | 4.0.1   |
