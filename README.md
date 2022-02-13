@@ -1,6 +1,6 @@
 ## DEV Resources
 
-## installation
+## Install
 
 1. Install [Poetry](https://python-poetry.org/) with [Poetry Install Guide](https://python-poetry.org/docs/master/#installing-with-the-official-installer)
 2. Initiate Poetry: `poetry shell`
@@ -15,26 +15,37 @@
        }
    ```
 
-## NEED FIX
+## Use
 
-`$ART$`: temp asset name.
+After preparing the all the steps above in the [Install Chapter](#install), you may want to switch algod-client, test PyTeal code, etc.
 
-## Move to contribute
+- Don't forget to `poetry shell` or `source ./.venv/bin/activate`.
+- Since this is a python package, testing would be "run with module", `python3 -m artificial_algorand_contract`
 
-This chapter focus on developing this tool, not using it.
+### Switch Algod Client
 
-### Observation
+Currently all `client` are using the same algod client initialized by last line in [algo_config](./artificial_algorand_contract/classes/algo_config.py). This param currently supports
 
-#### Algorand
+- `pure_stake` (testnet of PureStake)
+- `sandbox` (Algorand sandbox)
 
-- Python SDK returns a base64 encoded string, JS returns bytes """
+### Test PyTeal
 
-### dev log
+1. Write some PyTeal file, and bundle them to a class `TealPackage`, defined in [algorand.py](./artificial_algorand_contract/classes/algorand.py). E.g. `counter_package = TealPackage(approval_program(), clear_program(), teal_param, cmd_list)`
+2. Instance the `TealPackage` to a `TealTester` defined in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py). E.g. `TealTester(counter_package)`.  
+   To manipulate an old AppId(type: int), use `TealTester(TealPackage, old_app_id)`
+3. Call the methods of `TealTester`. The auto-complete function will help you pass the args. E.g. `counter_full_test()` in [tests.py](./artificial_algorand_contract/tests.py)
+4. Hints:
+   - To use the preset test accounts, just past "main", "alice", "bob" as the account arg.
+   - To NOT open the indexer AlgoExplore in browser, add a `settings` arg when instancing the `TealTester` (see code in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py) `TealTester.__init__`,`TealTesterSetting`).
 
-- [x] remove sensitive data like test account mnemonics before making this repo public
-- [x] The purpose of the repo has changed to be only for smart contracts on Algorand blockchain. So should we refactor this repo.
-- [ ] Exporter should be a module like py-leet-runner.
+### Algorand Tools
 
-### pip list
+- Class `AlgoAcc` with no arg will create an account on the testnet. The mnemonic words will only show once.
+- Create an Algorand Standard Asset (ASA) with [asset.py](./artificial_algorand_contract/classes/asset.py). You can remove the asset with [My Algo Wallet](https://wallet.myalgo.com/).
 
-`pip install py-algorand-sdk pyteal black`
+## Contribute
+
+- Use `poetry add` to add a package.
+
+See TODOs and more in [CONTRIBUTE.md](./docs/CONTRUBUTE.md)
