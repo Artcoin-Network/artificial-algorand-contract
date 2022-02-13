@@ -19,6 +19,9 @@
 
 After preparing the all the steps above in the [Install Chapter](#install), you may want to switch algod-client, test PyTeal code, etc.
 
+- Don't forget to `poetry shell` or `source ./.venv/bin/activate`.
+- Since this is a python package, testing would be "run with module", `python3 -m artificial_algorand_contract`
+
 ### Switch Algod Client
 
 Currently all `client` are using the same algod client initialized by last line in [algo_config](./artificial_algorand_contract/classes/algo_config.py). This param currently supports
@@ -39,7 +42,7 @@ Currently all `client` are using the same algod client initialized by last line 
 ### Algorand Tools
 
 - Class `AlgoAcc` with no arg will create an account on the testnet. The mnemonic words will only show once.
-- Create an Algorand Standard Asset (ASA) with [asset.py](./artificial_algorand_contract/classes/asset.py)
+- Create an Algorand Standard Asset (ASA) with [asset.py](./artificial_algorand_contract/classes/asset.py). You can remove the asset with [My Algo Wallet](https://wallet.myalgo.com/).
 
 ## Contribute
 
