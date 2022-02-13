@@ -35,7 +35,8 @@ Currently all `client` are using the same algod client initialized by last line 
 2. Instance the `TealPackage` to a `TealTester` defined in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py). E.g. `TealTester(counter_package)`.  
    To manipulate an old AppId(type: int), use `TealTester(TealPackage, old_app_id)`
 3. Call the methods of `TealTester`. The auto-complete function will help you pass the args. E.g. `counter_full_test()` in [tests.py](./artificial_algorand_contract/tests.py)
-4. Hints:
+4. All tests in the (3.) step should written in [tests.py](./artificial_algorand_contract/tests.py), then imported to the [main](./artificial_algorand_contract/__main__.py) file to be executed. Codes in [main](./artificial_algorand_contract/__main__.py) will not persist. It's not in `.gitignore` only for the convenience.
+5. Hints:
    - To use the preset test accounts, just past "main", "alice", "bob" as the account arg.
    - To NOT open the indexer AlgoExplore in browser, add a `settings` arg when instancing the `TealTester` (see code in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py) `TealTester.__init__`,`TealTesterSetting`).
 
