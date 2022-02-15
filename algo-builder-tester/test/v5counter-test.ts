@@ -1,5 +1,4 @@
-
-const { Runtime, AccountStore } = require('@algo-builder/runtime');
+import { AccountStore, Runtime } from '@algo-builder/runtime';
 const { types } = require('@algo-builder/web');
 const { assert } = require('chai');
 
@@ -15,12 +14,14 @@ describe("Algorand Smart Contracts - Stateful Counter example", function () {
     sign: types.SignType.SecretKey,
     fromAccount: john.account,
     appID: 0,
-    payFlags: { totalFee: fee }
+    payFlags: { totalFee: fee },
+    appArgs: undefined as undefined | Array<Uint8Array | string>,
   };
 
-  let runtime: typeof Runtime;
+  let runtime: Runtime;
   let approvalProgramFileName: string;
   let clearProgramFileName: string;
+
   this.beforeAll(function () {
     runtime = new Runtime([john]); // setup test
     approvalProgramFileName = 'approval.teal';
@@ -32,10 +33,10 @@ describe("Algorand Smart Contracts - Stateful Counter example", function () {
       clearProgramFileName,
       {
         sender: john.account,
-        globalBytes: 2,
-        globalInts: 2,
-        localBytes: 3,
-        localInts: 3
+        globalBytes: 0,
+        globalInts: 1,
+        localBytes: 0,
+        localInts: 0,
       },
       {}
     ).appID;
@@ -44,39 +45,44 @@ describe("Algorand Smart Contracts - Stateful Counter example", function () {
     runtime.optInToApp(john.address, txParams.appID, {}, {});
   });
 
-  const key = "counter";
+  const key = "Count";
+  // describe('inner describe', function () {
 
   it("should initialize local counter to 0 after opt-in", function () {
-    const localCounter = runtime.getAccount(john.address).getLocalState(txParams.appID, key); // get local value from john account
-    assert.isDefined(localCounter); // there should be a value present in local state with key "counter"
-    assert.equal(localCounter, 0n);
+    const globalCounter = runtime.getAccount(john.address).getGlobalState(txParams.appID, key); // get local value from john account
+    // console.log('globalCounter : ', globalCounter); // DEV_LOG_TO_REMOVE
+    assert.isDefined(globalCounter); // there should be a value present in local state with key "counter"
+    (globalCounter)
+    assert.equal(globalCounter, 0n);
   });
 
-  it("should set global and local counter to 1 on first call", function () {
-    runtime.executeTx(txParams);
 
+  it("should set global counter to 1 after first call", function () {
+    txParams.appArgs = [new Uint8Array(Buffer.from('Add'))] // not in docs
+    runtime.executeTx(txParams);
+    runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
     const globalCounter = runtime.getGlobalState(txParams.appID, key);
     assert.equal(globalCounter, 1n);
-
-    const localCounter = runtime.getAccount(john.address).getLocalState(txParams.appID, key); // get local value from john account
-    assert.equal(localCounter, 1n);
   });
 
   it("should update counter by +1 for both global and local states on second call", function () {
-    const globalCounter = runtime.getGlobalState(txParams.appID, key);
-    const localCounter = runtime.getAccount(john.address).getLocalState(txParams.appID, key);
+    const globalCounter = runtime.getGlobalState(txParams.appID, key) as bigint;
+    assert.isDefined(globalCounter)
 
-    // verfify that both counters are set to 1 (by the previous test)
+    // const localCounter = runtime.getAccount(john.address).getLocalState(txParams.appID, key);
+
+    // verify that both counters are set to 1 (by the previous test)
     assert.equal(globalCounter, 1n);
-    assert.equal(localCounter, 1n);
+    // assert.equal(localCounter, 1n);
 
     runtime.executeTx(txParams);
 
     // after execution the counters should be updated by +1
     const newGlobalCounter = runtime.getGlobalState(txParams.appID, key);
-    const newLocalCounter = runtime.getAccount(john.address).getLocalState(txParams.appID, key);
+    // const newLocalCounter = runtime.getAccount(john.address).getLocalState(txParams.appID, key);
 
     assert.equal(newGlobalCounter, globalCounter + 1n);
-    assert.equal(newLocalCounter, localCounter + 1n);
+    // assert.equal(newLocalCounter, localCounter + 1n);
   });
+  // });
 });
