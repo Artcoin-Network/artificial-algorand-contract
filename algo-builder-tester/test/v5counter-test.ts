@@ -3,7 +3,7 @@ const { types } = require('@algo-builder/web');
 const { assert } = require('chai');
 
 
-describe("Algorand Smart Contracts - Stateful Counter example", function () {
+describe.skip("Algorand Smart Contracts - Stateful Counter example", function () {
   //   useFixture("stateful");
   const fee = 1000;
   const minBalance = BigInt(1e6);
@@ -58,7 +58,7 @@ describe("Algorand Smart Contracts - Stateful Counter example", function () {
 
 
   it("should set global counter to 1 after first call", function () {
-    txParams.appArgs = [new Uint8Array(Buffer.from('Add'))] // not in docs
+    txParams.appArgs = [new Uint8Array(Buffer.from('Add'))] // not in docs, algo-builder-tester/node_modules/@algo-builder/web/build/types.d.ts
     runtime.executeTx(txParams);
     runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
     const globalCounter = runtime.getGlobalState(txParams.appID, key);
