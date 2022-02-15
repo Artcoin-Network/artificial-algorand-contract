@@ -57,4 +57,4 @@ Reason of moving: faster.
 
 - Use `poetry add` to add a package.
 
-See TODOs and more in [CONTRIBUTE.md](./docs/CONTRUBUTE.md)
+See TODOs and more in [CONTRIBUTE.md](./docs/CONTRIBUTE.md)
