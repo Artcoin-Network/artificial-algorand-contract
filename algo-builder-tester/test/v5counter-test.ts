@@ -3,7 +3,7 @@ const { types } = require('@algo-builder/web');
 const { assert } = require('chai');
 
 
-describe.skip("Algorand Smart Contracts - Stateful Counter example", function () {
+describe.only("Algorand Smart Contracts - Stateful Counter example", function () {
   //   useFixture("stateful");
   const fee = 1000;
   const minBalance = BigInt(1e6);
