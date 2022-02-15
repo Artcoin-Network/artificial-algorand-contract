@@ -5,17 +5,6 @@
 // NOTE: to be able to execute transactions, you need to use an active account with
 // a sufficient ALGO balance.
 
-/**
-   Check our /docs/algob-config.md documentation (https://github.com/scale-it/algo-builder/blob/master/docs/guide/algob-config.md) for more configuration options and ways how to
-  load a private keys:
-  + using mnemonic
-  + using binary secret key
-  + using KMD daemon
-  + loading from a file
-  + loading from an environment variable
-  + ...
-*/
-
 // ## ACCOUNTS USING mnemonic ##
 const { mkAccounts, algodCredentialsFromEnv } = require("@algo-builder/algob");
 let accounts = mkAccounts([
