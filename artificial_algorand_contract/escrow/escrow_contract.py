@@ -1,6 +1,6 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
 
-from artificial_algorand_contract.resources import (
+from ..resources import (
     ASSET,
     ASSET_ID,
     STABLE,
@@ -8,7 +8,7 @@ from artificial_algorand_contract.resources import (
     SUM_ASSET,
     SUM_STABLE,
 )
-from ..classes.algorand import TealCmdList, TealParam
+from ..classes.algorand import TealCmdList, TealPackage, TealParam
 
 
 from pyteal import (
@@ -220,3 +220,7 @@ def clear_program():
 # print out the results
 # print(approval_program())
 # print(clear_program())
+
+escrow_package = TealPackage(
+    "escrow", approval_program(), clear_program(), teal_param, cmd_list
+)

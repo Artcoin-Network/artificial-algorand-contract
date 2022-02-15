@@ -18,7 +18,7 @@ from pyteal import (
     compileTeal,
 )
 
-from ..classes.algorand import TealCmdList, TealParam
+from ..classes.algorand import TealCmdList, TealPackage, TealParam
 
 """Basic Counter Application"""
 
@@ -103,3 +103,6 @@ cmd_list: TealCmdList = [
     ["Add"],
     ["Deduct"],
 ]
+counter_package = TealPackage(
+    "counter", approval_program(), clear_program(), teal_param, cmd_list
+)
