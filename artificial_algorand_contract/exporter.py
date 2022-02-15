@@ -1,37 +1,39 @@
-## non-package imports
 from json import dump as json_dump
-from pathlib import Path
-from typing import Callable
-from counter.counter_contract import *  # or next line
 
-# from counter.counter_contract import approval_program, clear_program, state_storage
-## package imports
-# from counter.counter_contract import approval_program, clear_program, state_storage
+from artificial_algorand_contract import OUTPUT_DIR
+from artificial_algorand_contract.classes.algorand import TealPackage
 
-# TODO: maybe add a "topic" and add this string to filename.
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = REPO_ROOT / "output"
+# TODO: Add "contract-name" and add this string to filename.
 
 
-def write_output_teal(filename: str, compile_func: Callable) -> None:
-    output_path = OUTPUT_DIR / filename
-    with open(output_path, "w") as f:
-        f.write(compile_func())
+class Exporter:
+    def __init__(self, teal_package: TealPackage) -> None:
+        self.teal_package = teal_package
+
+    def export_teal_approval(self) -> None:
+        with open(OUTPUT_DIR / "approval.teal", "w") as f:
+            f.write(self.teal_package.approval)
+
+    def export_teal_clear(self) -> None:
+        with open(OUTPUT_DIR / "clear.teal", "w") as f:
+            f.write(self.teal_package.clear)
+
+    def export_teal_param(self) -> None:
+        with open(OUTPUT_DIR / "param.json", "w") as f:
+            json_dump(self.teal_package.param, f, indent=4)
+
+    def export(self) -> None:
+        self.export_teal_approval()
+        self.export_teal_clear()
+        self.export_teal_param()
+        print("Exported Teal files to:", OUTPUT_DIR.absolute())
 
 
-def write_json_config(filename: str, config_dict) -> None:
-    output_path = OUTPUT_DIR / filename
-    with open(output_path, "w") as f:
-        json_dump(config_dict, f, indent=4)
+def exporter_test():
+    from .counter import counter_package  # or next line
 
-
-def main():
-    write_output_teal("approval.teal", approval_program)
-    write_output_teal("clear.teal", clear_program)
-    write_json_config("state.json", teal_param)
+    Exporter(counter_package).export()
 
 
 if __name__ == "__main__":
-    main()
-    print("finished")
+    exporter_test()

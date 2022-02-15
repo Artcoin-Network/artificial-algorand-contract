@@ -1,7 +1,9 @@
-from artificial_algorand_contract.tests import counter_full_test
+from artificial_algorand_contract.exporter import exporter_test
 
-counter_full_test()
+exporter_test()
 
+# from artificial_algorand_contract.tests import counter_full_test
+# counter_full_test()
 
 # from artificial_algorand_contract.classes.account import check_main
 # from artificial_algorand_contract.classes.asset import create_test_asset
