@@ -1,1 +1,1 @@
-from escrow_contract import escrow_package
+from .escrow_contract import escrow_package

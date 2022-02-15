@@ -1,1 +1,1 @@
-from counter_contract import counter_package
+from .counter_contract import counter_package
