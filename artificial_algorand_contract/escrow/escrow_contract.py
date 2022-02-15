@@ -1,9 +1,9 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
 
 from ..resources import (
-    ASSET,
+    ASSET_NAME,
     ASSET_ID,
-    STABLE,
+    STABLE_NAME,
     STABLE_ID,
     SUM_ASSET,
     SUM_STABLE,
@@ -32,12 +32,11 @@ from pyteal import (
     InnerTxnBuilder,
 )
 
-
-local_ints_scheme = [ASSET, "aUSD"]  # to check if user can burn / need escrow more
+local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
 local_bytes_scheme = ["history"]  # TODO: for more data, maybe more "blocks"?
 global_ints_scheme = {
-    SUM_ASSET: f"sum of {ASSET} collateral, in unit of 1>>16 {ASSET}",
-    SUM_STABLE: f"sum of {STABLE} issued, in unit of 1>>16 {STABLE}",
+    SUM_ASSET: f"sum of {ASSET_NAME} collateral, with unit of decimal.",
+    SUM_STABLE: f"sum of {STABLE_NAME} issued, with unit of decimal.",
     "CRN": "collateralisation ratio = numerator / 2^32,"
     + "in range [0,2^32] with precision of 2^-32",
     # collateralisation ratio numerator
@@ -117,13 +116,13 @@ def approval_program():
             InnerTxnBuilder.Submit(),  # Issue aUSD to user
             App.localPut(
                 Txn.sender(),
-                Bytes(ASSET),
-                App.localGet(Txn.sender(), Bytes(ASSET)) + Txn.asset_amount() << 16,
+                Bytes(ASSET_NAME),
+                App.localGet(Txn.sender(), Bytes(ASSET_NAME)) + Txn.asset_amount(),
             ),
             App.localPut(
                 Txn.sender(),
-                Bytes(STABLE),
-                App.localGet(Txn.sender(), Bytes(STABLE)) + scratch_issuing.load(),
+                Bytes(STABLE_NAME),
+                App.localGet(Txn.sender(), Bytes(STABLE_NAME)) + scratch_issuing.load(),
             ),
             App.globalPut(
                 Bytes(SUM_ASSET),
@@ -160,13 +159,14 @@ def approval_program():
             InnerTxnBuilder.Submit(),  # Issue aUSD to user
             App.localPut(
                 Txn.sender(),
-                Bytes(ASSET),
-                App.localGet(Txn.sender(), Bytes(ASSET)) + Txn.asset_amount() << 16,
+                Bytes(ASSET_NAME),
+                App.localGet(Txn.sender(), Bytes(ASSET_NAME)) + Txn.asset_amount(),
             ),
             App.localPut(
                 Txn.sender(),
-                Bytes(STABLE),
-                App.localGet(Txn.sender(), Bytes(STABLE)) + scratch_returning.load(),
+                Bytes(STABLE_NAME),
+                App.localGet(Txn.sender(), Bytes(STABLE_NAME))
+                + scratch_returning.load(),
             ),
             App.globalPut(
                 Bytes(SUM_ASSET),

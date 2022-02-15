@@ -9,7 +9,7 @@ from artificial_algorand_contract.classes.algorand import TealPackage
 class Exporter:
     def __init__(self, teal_package: TealPackage) -> None:
         self.teal_package = teal_package
-        self.name = self.teal_package.name
+        self.name = teal_package.name
 
     def export_teal_approval(self) -> None:
         with open(OUTPUT_DIR / (self.name + "approval.teal"), "w") as f:

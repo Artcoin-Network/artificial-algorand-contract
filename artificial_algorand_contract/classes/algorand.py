@@ -88,13 +88,13 @@ class TealPackage:
 
     def __init__(
         self,
-        contract_name: str,
+        name: str,
         approval: str,
         clear: str,
         param: TealParam,
         app_args: Optional[TealCmdList] = None,
     ) -> None:
-        self.contract_name = contract_name
+        self.name = name
         self.approval = approval
         self.clear = clear
         self.param = param
