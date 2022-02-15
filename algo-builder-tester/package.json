@@ -5,7 +5,9 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "test": "algob test"
+    "postinstall": "algob test",
+    "test": "yarn test",
+    "a": "echo './assets/counter/approval.teal'"
   },
   "dependencies": {
     "@algo-builder/algob": "^3.2.0",
