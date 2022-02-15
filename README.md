@@ -29,7 +29,16 @@ Currently all `client` are using the same algod client initialized by last line 
 - `pure_stake` (testnet of PureStake)
 - `sandbox` (Algorand sandbox)
 
-### Test PyTeal
+### Test PyTeal with algo-builder-tester
+
+Reason of moving: faster.
+
+1. Run `__main__.py` (using exporter)
+2. Copy files (should change output dir)
+3. Run algo-builder-tester `cd ./algo-builder-tester && yarn test`
+4. New: Just `yarn` after `cd ./algo-builder-tester` can also do the job (1s slower). I used some yarn trick.
+
+### Test PyTeal with Python (discarded by algo-builder-tester)
 
 1. Write some PyTeal file, and bundle them to a class `TealPackage`, defined in [algorand.py](./artificial_algorand_contract/classes/algorand.py). E.g. `counter_package = TealPackage(approval_program(), clear_program(), teal_param, cmd_list)`
 2. Instance the `TealPackage` to a `TealTester` defined in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py). E.g. `TealTester(counter_package)`.  
@@ -37,7 +46,7 @@ Currently all `client` are using the same algod client initialized by last line 
 3. Call the methods of `TealTester`. The auto-complete function will help you pass the args. E.g. `counter_full_test()` in [tests.py](./artificial_algorand_contract/tests.py)
 4. All tests in the (3.) step should written in [tests.py](./artificial_algorand_contract/tests.py), then imported to the [main](./artificial_algorand_contract/__main__.py) file to be executed. Codes in [main](./artificial_algorand_contract/__main__.py) will not persist. It's not in `.gitignore` only for the convenience.
 5. Hints:
-   - To use the preset test accounts, just past "main", "alice", "bob" as the account arg.
+   - To use the preset test accounts, just past "master", "alice", "bob" as the account arg.
    - To NOT open the indexer AlgoExplore in browser, add a `settings` arg when instancing the `TealTester` (see code in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py) `TealTester.__init__`,`TealTesterSetting`).
 
 ### Algorand Tools
@@ -49,4 +58,4 @@ Currently all `client` are using the same algod client initialized by last line 
 
 - Use `poetry add` to add a package.
 
-See TODOs and more in [CONTRIBUTE.md](./docs/CONTRUBUTE.md)
+See TODOs and more in [CONTRIBUTE.md](./docs/CONTRIBUTE.md)

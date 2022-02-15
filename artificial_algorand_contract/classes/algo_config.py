@@ -19,12 +19,12 @@ config_initialized = False
 
 
 class TestAccounts:
-    main: AlgoAcc
+    master: AlgoAcc
     alice: AlgoAcc
     bob: AlgoAcc
 
     def __init__(self) -> None:
-        self.main = AlgoAcc(
+        self.master = AlgoAcc(
             mnemonics=ACCOUNT1_MNEMONICS,
             address=ACCOUNT1_ADDRESS,
         )
