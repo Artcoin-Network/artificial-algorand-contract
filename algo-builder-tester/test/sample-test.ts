@@ -8,7 +8,7 @@ const minBalance = BigInt(1e6);
 const masterBalance = BigInt(10e6);
 const amount = BigInt(1e6);
 
-describe('Sample Test', function () {
+describe.skip('Sample Test', function () {
   let master: AccountStore;
   let fundReceiver: AccountStore;
 

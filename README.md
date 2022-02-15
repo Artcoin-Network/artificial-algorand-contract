@@ -35,7 +35,7 @@ Reason of moving: faster.
 
 1. Run `__main__.py` (using exporter)
 2. Copy files (should change output dir)
-3. Run algo-builder-tester `cd ./algo-builder-tester && yarn algob test`
+3. Run algo-builder-tester `cd ./algo-builder-tester && yarn test`
 
 ### Test PyTeal with Python (discarded by algo-builder-tester)
 
