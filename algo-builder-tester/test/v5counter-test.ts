@@ -9,6 +9,13 @@ describe.skip("Algorand Smart Contracts - Stateful Counter example", function ()
   const minBalance = BigInt(1e6);
   const john = new AccountStore(minBalance + BigInt(fee));
 
+  // with `const john = new AccountStore(minBalance + BigInt(fee));` a new acc is created every time.
+  // and this account is not on mainnet/testnet/betanet. So, we need to create asset every time. 
+  // should wrap the creation in a outer function.
+  // const addr = john.address; 
+  // console.log('addr : ', addr); // XW2FDQCNDCT2R3CD2ZEUQMQHKAWX54UFUNBGVVHMK3DJU2H5F7UWDFRCUI
+  // console.log('addr : ', addr); // DHVYKOECEN6W66DTEDYEWX7S26WYYNY7VS2X2T66RPOWM2X7MV55Z7JNKE
+
   const txParams = {
     type: types.TransactionType.CallApp,
     sign: types.SignType.SecretKey,
@@ -40,6 +47,7 @@ describe.skip("Algorand Smart Contracts - Stateful Counter example", function ()
       },
       {}
     ).appID;
+    console.log('txParams.appID : ', txParams.appID); // DEV_LOG_TO_REMOVE
 
     // opt-in to the app
     runtime.optInToApp(john.address, txParams.appID, {}, {});
@@ -60,7 +68,7 @@ describe.skip("Algorand Smart Contracts - Stateful Counter example", function ()
   it("should set global counter to 1 after first call", function () {
     txParams.appArgs = [new Uint8Array(Buffer.from('Add'))] // not in docs, algo-builder-tester/node_modules/@algo-builder/web/build/types.d.ts
     runtime.executeTx(txParams);
-    runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
+    // runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
     const globalCounter = runtime.getGlobalState(txParams.appID, key);
     assert.equal(globalCounter, 1n);
   });
