@@ -4,6 +4,10 @@ output
 ## secret
 secret.env
 
+## Node.js
+*/**/node_modules/
+
+
 ## python
 
 */**/__pycache__/
