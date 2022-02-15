@@ -31,8 +31,8 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
 
   this.beforeAll(function () {
     runtime = new Runtime([john]); // setup test
-    approvalProgramFileName = 'approval.teal';
-    clearProgramFileName = 'clear.teal';
+    approvalProgramFileName = 'approval.teal'; // doesn't support `folder/approval`(will parse as full name).
+    clearProgramFileName = 'clear.teal'; // have to rename file. So I changed Py Exporter/TealPackage class.
 
     // deploy a new app
     txParams.appID = runtime.deployApp(
