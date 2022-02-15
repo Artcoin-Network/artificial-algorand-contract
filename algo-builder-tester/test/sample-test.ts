@@ -1,30 +1,31 @@
-const { getProgram } = require('@algo-builder/runtime');
-const { Runtime, AccountStore } = require('@algo-builder/runtime');
-const { types } = require('@algo-builder/web');
-const { assert } = require('chai');
+import { AccountStore, Runtime, getProgram } from "@algo-builder/runtime";
+
+import { LogicSigAccount } from "algosdk";
+import { assert } from "chai";
+import { types } from "@algo-builder/web";
 
 const minBalance = BigInt(1e6);
 const masterBalance = BigInt(10e6);
 const amount = BigInt(1e6);
 
 describe('Sample Test', function () {
-  let master;
-  let fundReceiver;
+  let master: AccountStore;
+  let fundReceiver: AccountStore;
 
-  let runtime;
-  let lsig;
+  let runtime: Runtime;
+  let lsig: LogicSigAccount;
   const feeCheckProgram = getProgram('fee-check.teal');
 
-  this.beforeEach(async function () {
+  beforeEach(async function () {
     master = new AccountStore(masterBalance);
     fundReceiver = new AccountStore(minBalance);
     runtime = new Runtime([master, fundReceiver]);
 
-    lsig = runtime.createLsigAccount(feeCheckProgram);
+    lsig = runtime.createLsigAccount(feeCheckProgram, []);
     lsig.sign(master.account.sk);
   });
 
-  function syncAccounts () {
+  function syncAccounts(): void {
     master = runtime.getAccount(master.address);
     fundReceiver = runtime.getAccount(fundReceiver.address);
   }
