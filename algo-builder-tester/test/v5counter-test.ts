@@ -47,7 +47,7 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
       },
       {}
     ).appID;
-    console.log('txParams.appID : ', txParams.appID); // DEV_LOG_TO_REMOVE
+    // console.log('txParams.appID : ', txParams.appID); // This number is always 9
 
     // opt-in to the app
     runtime.optInToApp(john.address, txParams.appID, {}, {});
