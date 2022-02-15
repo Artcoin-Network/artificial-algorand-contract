@@ -2,11 +2,11 @@
   "name": "algo-builder-tester",
   "version": "1.0.0",
   "description": "to test this repo only",
-  "main": "-",
-  "repository": "-",
-  "author": "-",
   "license": "MIT",
   "private": false,
+  "scripts": {
+    "test": "algob test"
+  },
   "dependencies": {
     "@algo-builder/algob": "^3.2.0",
     "@types/node": "^17.0.18",
@@ -17,6 +17,7 @@
     "@types/chai": "^4.3.0",
     "@types/jest": "^27.4.0",
     "chai": "^4.3.6",
+    "ts-mocha": "^9.0.2",
     "ts-node": "^10.5.0"
   }
 }
