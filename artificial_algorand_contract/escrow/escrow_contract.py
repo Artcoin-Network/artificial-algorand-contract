@@ -1,35 +1,39 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
-
-from ..resources import (
-    ASSET_NAME,
-    ASSET_ID,
-    STABLE_NAME,
-    STABLE_ID,
-    SUM_ASSET,
-    SUM_STABLE,
-)
-from ..classes.algorand import TealCmdList, TealPackage, TealParam
-
-
+# TODO: makesure ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
 from pyteal import (
+    Add,
     And,
     App,
     Bytes,
     Cond,
+    Div,
+    Ed25519Verify,
     Global,
     If,
+    InnerTxnBuilder,
     Int,
+    Minus,
     Mode,
+    Mul,
     OnComplete,
     Return,
     ScratchVar,
     Seq,
+    ShiftLeft,
     TealType,
     Txn,
     TxnField,
     compileTeal,
-    Ed25519Verify,
-    InnerTxnBuilder,
+)
+
+from ..classes.algorand import TealCmdList, TealPackage, TealParam
+from ..resources import (
+    ASSET_ID,
+    ASSET_NAME,
+    STABLE_ID,
+    STABLE_NAME,
+    SUM_ASSET,
+    SUM_STABLE,
 )
 
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
@@ -37,8 +41,8 @@ local_bytes_scheme = ["history"]  # TODO: for more data, maybe more "blocks"?
 global_ints_scheme = {
     SUM_ASSET: f"sum of {ASSET_NAME} collateral, with unit of decimal.",
     SUM_STABLE: f"sum of {STABLE_NAME} issued, with unit of decimal.",
-    "CRN": "collateralisation ratio = numerator / 2^32,"
-    + "in range [0,2^32] with precision of 2^-32",
+    "CRN": "collateralisation ratio = numerator / 2^32, \
+        in range [0,2^32] with precision of 2^-32",
     # collateralisation ratio numerator
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
@@ -59,11 +63,11 @@ cmd_list: TealCmdList = [
 def approval_program():
     handle_creation = Seq(
         [
-            App.globalPut(Bytes(SUM_ASSET), Int(0)),  # unit: 1>>16 $ART$
-            App.globalPut(Bytes(SUM_STABLE), Int(0)),  # unit: 1>>16 aUSD
+            App.globalPut(Bytes(SUM_ASSET), Int(0)),
+            App.globalPut(Bytes(SUM_STABLE), Int(0)),
             App.globalPut(
                 Bytes("CRN"), Int(5 << 32)
-            ),  # == 5* 2**32, assume 1$ART$=1aUSD
+            ),  # == 5* 2**32, assuming 1$ART$=1aUSD, minting 5$ART$ to get 1aUSD.
             Return(Int(1)),
         ]
     )  # global_ints_scheme
@@ -99,8 +103,10 @@ def approval_program():
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
             scratch_issuing.store(
-                (Txn.asset_amount() << 16) / (scratch_CRN.load() << 32)
-            ),
+                Div(
+                    Txn.asset_amount(), ShiftLeft(scratch_CRN.load(), Int(32))
+                )  # TODO: accuracy?
+            ),  # Remember that all needs Int()!
             # Issue aUSD to user
             InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
             InnerTxnBuilder.SetFields(
@@ -117,19 +123,23 @@ def approval_program():
             App.localPut(
                 Txn.sender(),
                 Bytes(ASSET_NAME),
-                App.localGet(Txn.sender(), Bytes(ASSET_NAME)) + Txn.asset_amount(),
+                Add(App.localGet(Txn.sender(), Bytes(ASSET_NAME)), Txn.asset_amount()),
             ),
             App.localPut(
                 Txn.sender(),
                 Bytes(STABLE_NAME),
-                App.localGet(Txn.sender(), Bytes(STABLE_NAME)) + scratch_issuing.load(),
+                Add(
+                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
+                    scratch_issuing.load(),
+                ),
             ),
             App.globalPut(
                 Bytes(SUM_ASSET),
-                scratch_sum_asset.load() + (Txn.asset_amount() << 16),
+                Add(scratch_sum_asset.load(), (Txn.asset_amount())),
             ),
             App.globalPut(
-                Bytes(SUM_STABLE), scratch_sum_stable.load() + scratch_issuing.load()
+                Bytes(SUM_STABLE),
+                Add(scratch_sum_stable.load(), scratch_issuing.load()),
             ),
             Return(Int(1)),
         ]
@@ -142,7 +152,9 @@ def approval_program():
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
             scratch_returning.store(
-                (Txn.asset_amount() << 16) * (scratch_CRN.load() << 32)
+                Mul(
+                    (Txn.asset_amount()), ShiftLeft(scratch_CRN.load(), Int(32))
+                )  # TODO: accuracy?
             ),
             # Issue aUSD to user
             InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
@@ -160,20 +172,32 @@ def approval_program():
             App.localPut(
                 Txn.sender(),
                 Bytes(ASSET_NAME),
-                App.localGet(Txn.sender(), Bytes(ASSET_NAME)) + Txn.asset_amount(),
+                Minus(
+                    App.localGet(Txn.sender(), Bytes(ASSET_NAME)),
+                    Txn.asset_amount(),
+                ),
             ),
             App.localPut(
                 Txn.sender(),
                 Bytes(STABLE_NAME),
-                App.localGet(Txn.sender(), Bytes(STABLE_NAME))
-                + scratch_returning.load(),
+                Minus(
+                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
+                    scratch_returning.load(),
+                ),
             ),
             App.globalPut(
                 Bytes(SUM_ASSET),
-                scratch_sum_asset.load() + (Txn.asset_amount() << 16),
+                Minus(
+                    scratch_sum_asset.load(),
+                    (Txn.asset_amount()),
+                ),
             ),
             App.globalPut(
-                Bytes(SUM_STABLE), scratch_sum_stable.load() + scratch_returning.load()
+                Bytes(SUM_STABLE),
+                Minus(
+                    scratch_sum_stable.load(),
+                    scratch_returning.load(),
+                ),
             ),
             Return(Int(1)),
         ]
@@ -191,10 +215,14 @@ def approval_program():
             And(
                 Global.group_size() == Int(1),
                 Txn.application_args[0] == Bytes("redeem"),
-                App.localGet(Txn.sender(), Bytes(STABLE)) >= Txn.asset_amount(),
+                App.localGet(Txn.sender(), Bytes(STABLE_NAME)) >= Txn.asset_amount(),
                 # TODO: make sure correct logic
             ),
             redeem,
+        ],
+        [
+            Int(1),
+            Return(Int(0)),  # Fail if no correct args.
         ],
     )
 
