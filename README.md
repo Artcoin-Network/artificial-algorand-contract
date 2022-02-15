@@ -29,7 +29,15 @@ Currently all `client` are using the same algod client initialized by last line 
 - `pure_stake` (testnet of PureStake)
 - `sandbox` (Algorand sandbox)
 
-### Test PyTeal
+### Test PyTeal with algo-builder-tester
+
+Reason of moving: faster.
+
+1. Run `__main__.py` (using exporter)
+2. Copy files (should change output dir)
+3. Run algo-builder-tester `cd ./algo-builder-tester && yarn algob test`
+
+### Test PyTeal with Python (discarded by algo-builder-tester)
 
 1. Write some PyTeal file, and bundle them to a class `TealPackage`, defined in [algorand.py](./artificial_algorand_contract/classes/algorand.py). E.g. `counter_package = TealPackage(approval_program(), clear_program(), teal_param, cmd_list)`
 2. Instance the `TealPackage` to a `TealTester` defined in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py). E.g. `TealTester(counter_package)`.  
