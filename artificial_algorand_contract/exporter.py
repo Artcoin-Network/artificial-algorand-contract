@@ -1,4 +1,5 @@
 from json import dump as json_dump
+from os import mkdir
 
 from artificial_algorand_contract import OUTPUT_DIR
 from artificial_algorand_contract.classes.algorand import TealPackage
@@ -12,6 +13,8 @@ class Exporter:
         self.name = teal_package.name
 
     def export_teal_approval(self) -> None:
+        if not OUTPUT_DIR.exists():
+            mkdir(OUTPUT_DIR)
         with open(OUTPUT_DIR / (self.name + "-approval.teal"), "w") as f:
             f.write(self.teal_package.approval)
 
