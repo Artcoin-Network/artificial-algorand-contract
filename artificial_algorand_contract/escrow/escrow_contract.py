@@ -1,5 +1,6 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
-# TODO: makesure ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
+# TODO: make sure that ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
+
 from pyteal import (
     Add,
     And,
@@ -37,7 +38,9 @@ from ..resources import (
 )
 
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
-local_bytes_scheme = ["history"]  # TODO: for more data, maybe more "blocks"?
+local_bytes_scheme = [
+    "history"
+]  # not needed at redeem: no more data for more data, maybe more "blocks"?
 global_ints_scheme = {
     SUM_ASSET: f"sum of {ASSET_NAME} collateral, with unit of decimal.",
     SUM_STABLE: f"sum of {STABLE_NAME} issued, with unit of decimal.",
@@ -80,12 +83,12 @@ def approval_program():
 
     handle_update_app = Return(
         And(
-            Global.creator_address() == Txn.sender(),
+            Global.creator_address() == Txn.sender(),  # TODO: manager
             Ed25519Verify(
                 data=Txn.application_args[0],
                 sig=Txn.application_args[1],
                 key=Txn.application_args[2],
-            ),  # TODO: discuss: security, should use a password? high cost is ok.
+            ),  # security, should use a password, high cost is ok.
         )
     )
 
@@ -105,7 +108,7 @@ def approval_program():
             scratch_issuing.store(
                 Div(
                     Txn.asset_amount(), ShiftLeft(scratch_CRN.load(), Int(32))
-                )  # TODO: accuracy?
+                )  # TODO: accuracy? should test.
             ),  # Remember that all needs Int()!
             # Issue aUSD to user
             InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
@@ -216,7 +219,8 @@ def approval_program():
                 Global.group_size() == Int(1),
                 Txn.application_args[0] == Bytes("redeem"),
                 App.localGet(Txn.sender(), Bytes(STABLE_NAME)) >= Txn.asset_amount(),
-                # TODO: make sure correct logic
+                # correct logic depend on ACID (atomicity, consistency, isolation, durability).
+                # cannot be used to cheat (will not parallel) for ACID.
             ),
             redeem,
         ],
