@@ -45,8 +45,9 @@ global_ints_scheme = {
     SUM_ASSET: f"sum of {ASSET_NAME} collateral, with unit of decimal.",
     SUM_STABLE: f"sum of {STABLE_NAME} issued, with unit of decimal.",
     "CRN": "collateralisation ratio = numerator / 2^32, \
-        in range [0,2^32] with precision of 2^-32",
+        in range [0,2^32] with precision of 2^-32 (too fine precision).",
     # collateralisation ratio numerator
+    # TODO: precision 2^-16 should be enough, we don't need that much. Decimal is clearer.
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
 
