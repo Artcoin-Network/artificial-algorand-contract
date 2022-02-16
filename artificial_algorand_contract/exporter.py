@@ -12,15 +12,15 @@ class Exporter:
         self.name = teal_package.name
 
     def export_teal_approval(self) -> None:
-        with open(OUTPUT_DIR / (self.name + "approval.teal"), "w") as f:
+        with open(OUTPUT_DIR / (self.name + "-approval.teal"), "w") as f:
             f.write(self.teal_package.approval)
 
     def export_teal_clear(self) -> None:
-        with open(OUTPUT_DIR / (self.name + "clear.teal"), "w") as f:
+        with open(OUTPUT_DIR / (self.name + "-clear.teal"), "w") as f:
             f.write(self.teal_package.clear)
 
     def export_teal_param(self) -> None:
-        with open(OUTPUT_DIR / (self.name + "param.json"), "w") as f:
+        with open(OUTPUT_DIR / (self.name + "-param.json"), "w") as f:
             json_dump(self.teal_package.param, f, indent=4)
 
     def export(self) -> None:
