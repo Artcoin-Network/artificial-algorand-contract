@@ -5,8 +5,8 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "postinstall": "algob test",
-    "test": "yarn test",
+    "postinstall": "yarn test",
+    "test": "algob test",
     "a": "echo './assets/counter/approval.teal'"
   },
   "dependencies": {
