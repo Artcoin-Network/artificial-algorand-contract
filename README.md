@@ -19,6 +19,7 @@
 
 After preparing the all the steps above in the [Install Chapter](#install), you may want to switch algod-client, test PyTeal code, etc.
 
+- None secret settings are in `artificial_algorand_contract/__init__.py` #TODO:refactor
 - Don't forget to `poetry shell` or `source ./.venv/bin/activate`.
 - Since this is a python package, testing would be "run with module", `python3 -m artificial_algorand_contract`. In this mode, only the [main](./artificial_algorand_contract/__main__.py) file is executed, as an entrance point. With VSCode, it's easier to do `[run]`-`[start debugging]`.
 

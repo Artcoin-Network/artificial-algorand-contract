@@ -1,0 +1,209 @@
+#pragma version 5
+txn ApplicationID
+int 0
+==
+bnz main_l18
+txn OnCompletion
+int OptIn
+==
+bnz main_l17
+txn OnCompletion
+int CloseOut
+==
+bnz main_l16
+txn OnCompletion
+int UpdateApplication
+==
+bnz main_l15
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l14
+txn OnCompletion
+int NoOp
+==
+bnz main_l7
+err
+main_l7:
+global GroupSize
+int 1
+==
+txna ApplicationArgs 0
+byte "escrow"
+==
+&&
+bnz main_l13
+global GroupSize
+int 1
+==
+txna ApplicationArgs 0
+byte "redeem"
+==
+&&
+txn Sender
+byte "aUSD"
+app_local_get
+txn AssetAmount
+>=
+&&
+bnz main_l12
+int 1
+bnz main_l11
+err
+main_l11:
+int 0
+return
+main_l12:
+byte "+$ART$"
+app_global_get
+store 0
+byte "+aUSD"
+app_global_get
+store 1
+byte "CRN"
+app_global_get
+store 2
+txn AssetAmount
+load 2
+*
+int 32
+shr
+store 4
+itxn_begin
+byte "issuance of aUSD on TXN_ID: (Txn TxID)"
+itxn_field Note
+int 70214956
+itxn_field XferAsset
+load 4
+itxn_field AssetAmount
+txn Sender
+itxn_field AssetReceiver
+global CreatorAddress
+itxn_field Sender
+global CreatorAddress
+itxn_field AssetCloseTo
+itxn_submit
+txn Sender
+byte "$ART$"
+txn Sender
+byte "$ART$"
+app_local_get
+txn AssetAmount
+-
+app_local_put
+txn Sender
+byte "aUSD"
+txn Sender
+byte "aUSD"
+app_local_get
+load 4
+-
+app_local_put
+byte "+$ART$"
+load 0
+txn AssetAmount
+-
+app_global_put
+byte "+aUSD"
+load 1
+load 4
+-
+app_global_put
+int 1
+return
+main_l13:
+byte "+$ART$"
+app_global_get
+store 0
+byte "+aUSD"
+app_global_get
+store 1
+byte "CRN"
+app_global_get
+store 2
+txn AssetAmount
+load 2
+/
+int 32
+shr
+store 3
+itxn_begin
+byte "issuance of aUSD on TXN_ID: (Txn TxID)"
+itxn_field Note
+int 70214962
+itxn_field XferAsset
+load 3
+itxn_field AssetAmount
+global CreatorAddress
+itxn_field Sender
+txn Sender
+itxn_field AssetReceiver
+global CreatorAddress
+itxn_field AssetCloseTo
+itxn_submit
+txn Sender
+byte "$ART$"
+txn Sender
+byte "$ART$"
+app_local_get
+txn AssetAmount
++
+app_local_put
+txn Sender
+byte "aUSD"
+txn Sender
+byte "aUSD"
+app_local_get
+load 3
++
+app_local_put
+byte "+$ART$"
+load 0
+txn AssetAmount
++
+app_global_put
+byte "+aUSD"
+load 1
+load 3
++
+app_global_put
+int 1
+return
+main_l14:
+global CreatorAddress
+txn Sender
+==
+txna ApplicationArgs 0
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l15:
+global CreatorAddress
+txn Sender
+==
+txna ApplicationArgs 0
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l16:
+int 0
+return
+main_l17:
+int 1
+return
+main_l18:
+byte "+$ART$"
+int 0
+app_global_put
+byte "+aUSD"
+int 0
+app_global_put
+byte "CRN"
+int 21474836480
+app_global_put
+int 1
+return
