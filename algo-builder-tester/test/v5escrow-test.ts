@@ -24,18 +24,18 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
   let lsig: LogicSigAccount;
   let admin = new AccountStore(BigInt(minBalance + fee));
   let alice = new AccountStore(BigInt(minBalance + fee));
-  let bob = new AccountStore(BigInt(minBalance + fee));
+  let billy = new AccountStore(BigInt(minBalance + fee));
   /* HELPERS */
 
   function syncAccounts() {
     admin = runtime.getAccount(admin.address);
     alice = runtime.getAccount(alice.address);
-    bob = runtime.getAccount(bob.address);
+    billy = runtime.getAccount(billy.address);
   }
 
 
   this.beforeAll(function () {
-    runtime = new Runtime([admin, alice, bob]);
+    runtime = new Runtime([admin, alice, billy]);
     const { approvalProgramFileName,
       clearProgramFileName,
     } = runtime_config;
@@ -56,13 +56,13 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     // opt-in to the app
     runtime.optInToApp(admin.address, appID, {}, {});
     runtime.optInToApp(alice.address, appID, {}, {});
-    runtime.optInToApp(bob.address, appID, {}, {});
+    runtime.optInToApp(billy.address, appID, {}, {});
 
     syncAccounts();
     const _addresses = {
       admin: admin.address,
       alice: alice.address,
-      bob: bob.address
+      billy: billy.address
     }
     console.log('addresses : ', _addresses); // DEV_LOG_TO_REMOVE
 
@@ -89,13 +89,14 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     const artID = ART.assetID
     const usdID = aUSD.assetID
 
-    // opt-in to the asa with alice and bob
+    // opt-in to the asa with alice and billy
     runtime.optIntoASA(artID, alice.address, {});
-    runtime.optIntoASA(artID, bob.address, {});
+    runtime.optIntoASA(artID, billy.address, {});
     runtime.optIntoASA(usdID, alice.address, {});
-    runtime.optIntoASA(usdID, bob.address, {});
+    runtime.optIntoASA(usdID, billy.address, {});
 
-    // dispense 1k $ART$ to each alice and bob
+    // TODO:ref: split to another function that calls this one.
+    // dispense 1k $ART$ to each alice and billy
     syncAccounts();
     const dispenseTxParams: types.AssetTransferParam = {
       type: types.TransactionType.TransferAsset,
@@ -108,7 +109,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     }
     dispenseTxParams.toAccountAddr = alice.address;
     runtime.executeTx(dispenseTxParams);
-    dispenseTxParams.toAccountAddr = bob.address;
+    dispenseTxParams.toAccountAddr = billy.address;
     runtime.executeTx(dispenseTxParams);
 
     return { adminAssets, artID, usdID }
@@ -121,7 +122,8 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       console.log('{ adminAssets, artID, usdID } : ', { adminAssets, artID, usdID }); // DEV_LOG_TO_REMOVE
       assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
       console.log('alice.assets : ', alice.assets); // DEV_LOG_TO_REMOVE
-
+      assert.equal(1000n, alice.assets.get(artID)!['amount']!);
+      assert.equal(1000n, billy.assets.get(artID)!['amount']!);
     })
   })
 
