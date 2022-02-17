@@ -20,7 +20,7 @@ from pyteal import (
     Return,
     ScratchVar,
     Seq,
-    ShiftLeft,
+    ShiftRight,
     TealType,
     Txn,
     TxnField,
@@ -37,6 +37,11 @@ from ..resources import (
     SUM_STABLE,
 )
 
+CRDB = 32  # CRDB is the number of bytes in the CRD
+CRD = Int(
+    1 << CRDB
+)  # collateralisation ratio denominator, reciprocal of precision of CR.
+
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
 local_bytes_scheme = [
     "history"
@@ -47,7 +52,8 @@ global_ints_scheme = {
     "CRN": "collateralisation ratio = numerator / 2^32, \
         in range [0,2^32] with precision of 2^-32 (too fine precision).",
     # collateralisation ratio numerator
-    # TODO: precision 2^-16 should be enough, we don't need that much. Decimal is clearer.
+    # TODO:discuss: precision 2^-16 should be enough, we don't need that much.
+    # TODO:+: Decimal is clearer. 2^-16 ~== 0.0015%. the floating range is much larger.
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
 
@@ -79,8 +85,8 @@ def approval_program():
     handle_opt_in = Return(Int(1))  # always allow user to opt in
 
     handle_close_out = Return(
-        Int(1)
-    )  # TODO: check user's escrow. Only 0 escrow user can close out.
+        Int(0)  # not allow anyone to close out escrow for now, for todo
+    )  # TODO: check user's escrow. Only user with 0 escrow can close out (not losing $ART$).
 
     handle_update_app = Return(
         And(
@@ -103,20 +109,20 @@ def approval_program():
     escrow = Seq(
         # User escrow $ART$ to get aUSD
         [
-            scratch_sum_asset.store(App.globalGet(Bytes(SUM_ASSET))),  # TODO:why store?
+            scratch_sum_asset.store(
+                App.globalGet(Bytes(SUM_ASSET))
+            ),  # TODO:ask: why store?
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
             scratch_issuing.store(
-                Div(
-                    Txn.asset_amount(), ShiftLeft(scratch_CRN.load(), Int(32))
-                )  # TODO: accuracy? should test.
+                ShiftRight(Div(Txn.asset_amount(), scratch_CRN.load()), Int(CRDB))
             ),  # Remember that all needs Int()!
             # Issue aUSD to user
             InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
             InnerTxnBuilder.SetFields(
                 {
                     TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                    TxnField.xfer_asset: Int(STABLE_ID),  # TODO: not sure
+                    TxnField.xfer_asset: Int(STABLE_ID),
                     TxnField.asset_amount: scratch_issuing.load(),
                     TxnField.sender: Global.creator_address(),
                     TxnField.asset_receiver: Txn.sender(),
@@ -152,20 +158,18 @@ def approval_program():
     redeem = Seq(
         # user redeem $ART$ from aUSD, assuming user has enough escrowed $ART$
         [
-            scratch_sum_asset.store(App.globalGet(Bytes(SUM_ASSET))),  # TODO:why store?
+            scratch_sum_asset.store(App.globalGet(Bytes(SUM_ASSET))),
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
             scratch_returning.store(
-                Mul(
-                    (Txn.asset_amount()), ShiftLeft(scratch_CRN.load(), Int(32))
-                )  # TODO: accuracy?
+                ShiftRight(Mul((Txn.asset_amount()), scratch_CRN.load()), Int(CRDB))
             ),
             # Issue aUSD to user
-            InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
+            InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
                 {
                     TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                    TxnField.xfer_asset: Int(ASSET_ID),  # TODO: not sure
+                    TxnField.xfer_asset: Int(ASSET_ID),
                     TxnField.asset_amount: scratch_returning.load(),
                     TxnField.asset_receiver: Txn.sender(),
                     TxnField.sender: Global.creator_address(),
