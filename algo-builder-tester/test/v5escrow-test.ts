@@ -92,32 +92,36 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     })
   })
 
-  it("test initial global states", function () {
-    const sumEscrowed = runtime.getAccount(admin.address).getGlobalState(appID, "+$ART$");
-    const sumIssued = runtime.getAccount(admin.address).getGlobalState(appID, "+aUSD");
-    const initCRN = runtime.getAccount(admin.address).getGlobalState(appID, "CRN");
-    assert.isDefined(sumEscrowed);
-    assert.isDefined(sumIssued);
-    assert.isDefined(initCRN);
-    assert.equal(sumEscrowed, 0n);
-    assert.equal(sumIssued, 0n);
-    assert.equal(initCRN, 5n << 32n);
-  });
+  describe("mint smart contract", function () {
+    it("test initial global states", function () {
+      syncAccounts();
+      const sumEscrowed = admin.getGlobalState(appID, "+$ART$");
+      const sumIssued = admin.getGlobalState(appID, "+aUSD");
+      const initCRN = admin.getGlobalState(appID, "CRN");
+      assert.isDefined(sumEscrowed);
+      assert.isDefined(sumIssued);
+      assert.isDefined(initCRN);
+      assert.equal(sumEscrowed, 0n);
+      assert.equal(sumIssued, 0n);
+      assert.equal(initCRN, 5n << 32n);
+    });
 
-  it("escrow 100 art to mint 20 aUSD", function () {
-    const txParams: types.AppCallsParam = {
-      type: types.TransactionType.CallApp,
-      sign: types.SignType.SecretKey,
-      fromAccount: alice.account,
-      appID: appID,
-      payFlags: { totalFee: fee },
-      appArgs: [new Uint8Array(Buffer.from('Add'))]
-    }; // variable hoisting?
+    it.skip("escrow 100 art to mint 20 aUSD", function () {
+      syncAccounts();
+      const txParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ['str:escrow', 'int:100']
+      }; // variable hoisting?
 
-    runtime.executeTx(txParams);
-    // runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
-    const globalCounter = runtime.getGlobalState(appID, ASSET_SUM);
-    assert.equal(globalCounter, 1n);
+      runtime.executeTx(txParams);
+      // runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
+      const globalCounter = runtime.getGlobalState(appID, ASSET_SUM);
+      assert.equal(globalCounter, 1n);
+    });
   });
 
 });
