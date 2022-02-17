@@ -62,31 +62,34 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     // create asset
   });
 
+  function createAssets() {
+    syncAccounts();
+    const ART = runtime.deployASA('$ART$', {
+      creator:
+      {
+        ...admin.account,
+        name: "art-creator"
+      }
+    })
+    const aUSD = runtime.deployASA('aUSD', {
+      creator:
+      {
+        ...admin.account,
+        name: "aUSD-creator"
+      }
+    })
+    const adminAssets = admin.createdAssets;
+    const artID = ART.assetID
+    const usdID = aUSD.assetID
+    return { adminAssets, artID, usdID }
+  }
+
   describe("related ASA", function () {
     it("asset creation", function () {
+      const { adminAssets, artID, usdID } = createAssets()
       syncAccounts();
-      const ART = runtime.deployASA('$ART$', {
-        creator:
-        {
-          ...admin.account,
-          name: "asa-creator"
-        }
-      })
-      const aUSD = runtime.deployASA('aUSD', {
-        creator:
-        {
-          ...admin.account,
-          name: "asa-creator"
-        }
-      })
-      const ca = admin.createdAssets;
-      const artID = ART.assetID
-      const usdID = aUSD.assetID
-      console.log({ artID, usdID }); // DEV_LOG_TO_REMOVE
-      assert.isTrue(ca.has(artID) && ca.has(usdID));
-      console.log('ca : ', ca); // DEV_LOG_TO_REMOVE
+      assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
     })
-
   })
 
   it("test initial global states", function () {
