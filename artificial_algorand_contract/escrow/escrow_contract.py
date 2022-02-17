@@ -29,13 +29,17 @@ from pyteal import (
 
 from ..classes.algorand import TealCmdList, TealPackage, TealParam
 from ..resources import (
-    ASSET_ID,
     ASSET_NAME,
-    STABLE_ID,
     STABLE_NAME,
     SUM_ASSET,
     SUM_STABLE,
+    # ASSET_ID,
+    # STABLE_ID,
 )
+
+ASSET_ID = 9
+STABLE_ID = 10
+
 
 CRDB = 32  # CRDB is the number of bytes in the CRD
 CRD = Int(
@@ -121,7 +125,8 @@ def approval_program():
             InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
             InnerTxnBuilder.SetFields(
                 {
-                    TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
+                    # TODO:bug: :down: this line has some problem
+                    # TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
                     TxnField.xfer_asset: Int(STABLE_ID),
                     TxnField.asset_amount: scratch_issuing.load(),
                     TxnField.sender: Global.creator_address(),
@@ -168,6 +173,7 @@ def approval_program():
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
                 {
+                    # TODO:bug: :down: this line has some problem
                     TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
                     TxnField.xfer_asset: Int(ASSET_ID),
                     TxnField.asset_amount: scratch_returning.load(),

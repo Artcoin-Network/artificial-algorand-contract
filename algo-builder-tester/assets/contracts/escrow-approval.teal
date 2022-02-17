@@ -72,7 +72,7 @@ store 4
 itxn_begin
 byte "issuance of aUSD on TXN_ID: (Txn TxID)"
 itxn_field Note
-int 70214956
+int 9
 itxn_field XferAsset
 load 4
 itxn_field AssetAmount
@@ -128,9 +128,7 @@ int 32
 shr
 store 3
 itxn_begin
-byte "issuance of aUSD on TXN_ID: (Txn TxID)"
-itxn_field Note
-int 70214962
+int 10
 itxn_field XferAsset
 load 3
 itxn_field AssetAmount
