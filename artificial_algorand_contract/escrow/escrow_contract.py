@@ -166,6 +166,7 @@ def approval_program():
             scratch_sum_asset.store(App.globalGet(Bytes(SUM_ASSET))),
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
+            # TODO:fix: check asset == $ART$, not any random asset
             scratch_returning.store(
                 ShiftRight(Mul((Txn.asset_amount()), scratch_CRN.load()), Int(CRDB))
             ),
