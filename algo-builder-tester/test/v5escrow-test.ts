@@ -14,12 +14,14 @@ const runtime_config = {
   clearProgramFileName: "escrow-clear.teal",
 }
 
-describe.only("ART-aUSD mint/redeem smart contract", function () {
+describe("ART-aUSD mint/redeem smart contract", function () {
   //   useFixture("stateful");
   const fee = 1000;
   const minBalance = 1e6;
 
   let appID: number;
+  let artID: number;
+  let usdID: number;
   let runtime: Runtime;
   let lsig: LogicSigAccount;
   let admin = new AccountStore(BigInt(minBalance + fee));
@@ -64,21 +66,21 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       alice: alice.address,
       billy: billy.address
     }
-    console.log('addresses : ', _addresses); // DEV_LOG_TO_REMOVE
+    console.log('addresses used in this test : ', _addresses);
 
     // create asset
   });
 
   function createAssets() { // also dispense.
     syncAccounts();
-    const ART = runtime.deployASA('$ART$', {
+    const ART = runtime.deployASA(ASSET_NAME, {
       creator:
       {
         ...admin.account,
-        name: "art-creator"
+        name: "$ART$-creator"
       }
     })
-    const aUSD = runtime.deployASA('aUSD', {
+    const aUSD = runtime.deployASA(STABLE_NAME, {
       creator:
       {
         ...admin.account,
@@ -86,8 +88,8 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       }
     })
     const adminAssets = admin.createdAssets;
-    const artID = ART.assetID
-    const usdID = aUSD.assetID
+    artID = ART.assetID
+    usdID = aUSD.assetID
 
     // opt-in to the asa with alice and billy
     runtime.optIntoASA(artID, alice.address, {});
@@ -112,16 +114,15 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     dispenseTxParams.toAccountAddr = billy.address;
     runtime.executeTx(dispenseTxParams);
 
-    return { adminAssets, artID, usdID }
+    return { adminAssets }
   }
 
   describe("related ASA", function () {
-    it.only("asset creation and dispense", function () {
-      const { adminAssets, artID, usdID } = createAssets()
+    it("asset creation and dispense", function () {
+      const { adminAssets } = createAssets()
       syncAccounts();
-      console.log('{ adminAssets, artID, usdID } : ', { adminAssets, artID, usdID }); // DEV_LOG_TO_REMOVE
       assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
-      console.log('alice.assets : ', alice.assets); // DEV_LOG_TO_REMOVE
+      // dispensed 1k $ART$ to alice and billy 
       assert.equal(1000n, alice.assets.get(artID)!['amount']!);
       assert.equal(1000n, billy.assets.get(artID)!['amount']!);
     })
@@ -130,7 +131,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
   describe("mint smart contract", function () {
     it("test initial global states", function () {
       syncAccounts();
-      const sumEscrowed = admin.getGlobalState(appID, STABLE_SUM);
+      const sumEscrowed = admin.getGlobalState(appID, ASSET_SUM);
       const sumIssued = admin.getGlobalState(appID, STABLE_SUM);
       const initCRN = admin.getGlobalState(appID, "CRN");
       assert.isDefined(sumEscrowed);
@@ -142,8 +143,10 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     });
 
     it.skip("escrow 100 art to mint 20 aUSD", function () {
-      createAssets();
+      const { adminAssets } = createAssets()
       syncAccounts();
+      assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
+
       const txParams: types.AppCallsParam = {
         type: types.TransactionType.CallApp,
         sign: types.SignType.SecretKey,
@@ -151,10 +154,21 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
         appID: appID,
         payFlags: { totalFee: fee },
         appArgs: ['str:escrow', 'int:100']
-      }; // variable hoisting?
+      };
 
-      runtime.executeTx(txParams);
-      // runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
+      const escrowTxParams: types.AssetTransferParam = {
+        type: types.TransactionType.TransferAsset,
+        sign: types.SignType.SecretKey,
+        fromAccount: admin.account,
+        assetID: artID,
+        payFlags: { totalFee: fee },
+        toAccountAddr: admin.address,
+        amount: 1000,
+      }
+
+
+
+      runtime.executeTx([txParams, escrowTxParams]);
       const globalCounter = runtime.getGlobalState(appID, ASSET_SUM);
       assert.equal(globalCounter, 1n);
     });
