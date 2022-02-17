@@ -20,7 +20,7 @@ from pyteal import (
     Return,
     ScratchVar,
     Seq,
-    ShiftLeft,
+    ShiftRight,
     TealType,
     Txn,
     TxnField,
@@ -37,6 +37,11 @@ from ..resources import (
     SUM_STABLE,
 )
 
+CRDB = 32  # CRDB is the number of bytes in the CRD
+CRD = Int(
+    1 << CRDB
+)  # collateralisation ratio denominator, reciprocal of precision of CR.
+
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
 local_bytes_scheme = [
     "history"
@@ -47,7 +52,8 @@ global_ints_scheme = {
     "CRN": "collateralisation ratio = numerator / 2^32, \
         in range [0,2^32] with precision of 2^-32 (too fine precision).",
     # collateralisation ratio numerator
-    # TODO: precision 2^-16 should be enough, we don't need that much. Decimal is clearer.
+    # TODO: discuss: precision 2^-16 should be enough, we don't need that much.
+    # TODO: + Decimal is clearer. 2^-16 ~== 0.0015%. the floating range is much larger.
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
 
@@ -107,8 +113,8 @@ def approval_program():
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
             scratch_issuing.store(
-                Div(
-                    Txn.asset_amount(), ShiftLeft(scratch_CRN.load(), Int(32))
+                ShiftRight(
+                    Div(Txn.asset_amount(), scratch_CRN.load()), Int(CRDB)
                 )  # TODO: accuracy? should test.
             ),  # Remember that all needs Int()!
             # Issue aUSD to user
@@ -116,7 +122,7 @@ def approval_program():
             InnerTxnBuilder.SetFields(
                 {
                     TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                    TxnField.xfer_asset: Int(STABLE_ID),  # TODO: not sure
+                    TxnField.xfer_asset: Int(STABLE_ID),
                     TxnField.asset_amount: scratch_issuing.load(),
                     TxnField.sender: Global.creator_address(),
                     TxnField.asset_receiver: Txn.sender(),
@@ -156,8 +162,8 @@ def approval_program():
             scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
             scratch_CRN.store(App.globalGet(Bytes("CRN"))),
             scratch_returning.store(
-                Mul(
-                    (Txn.asset_amount()), ShiftLeft(scratch_CRN.load(), Int(32))
+                ShiftRight(
+                    Mul((Txn.asset_amount()), scratch_CRN.load()), Int(CRDB)
                 )  # TODO: accuracy?
             ),
             # Issue aUSD to user
