@@ -22,7 +22,7 @@ let accounts = mkAccounts([
   {
     // This account is created using `make setup-master-account` command from our
     // `/infrastructure` directory. It already has many ALGOs
-    name: "master",
+    name: "admin",
     addr: "WWYNX3TKQYVEREVSW6QQP3SXSFOCE3SKUSEIVJ7YAGUPEACNI5UGI4DZCE",
     mnemonic:
       "enforce drive foster uniform cradle tired win arrow wasp melt cattle chronic sport dinosaur announce shell correct shed amused dismiss mother jazz task above hospital",

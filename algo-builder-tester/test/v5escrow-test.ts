@@ -14,20 +14,28 @@ const runtime_config = {
   clearProgramFileName: "escrow-clear.teal",
 }
 
-describe.only("Algorand Smart Contracts - Stateful Counter example", function () {
+describe.only("ART-aUSD mint/redeem smart contract", function () {
   //   useFixture("stateful");
   const fee = 1000;
   const minBalance = 1e6;
-  const master = new AccountStore(BigInt(minBalance + fee));
-  const alice = new AccountStore(BigInt(minBalance + fee));
-  const bob = new AccountStore(BigInt(minBalance + fee));
 
   let appID: number;
   let runtime: Runtime;
   let lsig: LogicSigAccount;
+  let admin = new AccountStore(BigInt(minBalance + fee));
+  let alice = new AccountStore(BigInt(minBalance + fee));
+  let bob = new AccountStore(BigInt(minBalance + fee));
+  /* HELPERS */
+
+  function syncAccounts() {
+    admin = runtime.getAccount(admin.address);
+    alice = runtime.getAccount(alice.address);
+    bob = runtime.getAccount(bob.address);
+  }
+
 
   this.beforeAll(function () {
-    runtime = new Runtime([master, alice, bob]);
+    runtime = new Runtime([admin, alice, bob]);
     const { approvalProgramFileName,
       clearProgramFileName,
     } = runtime_config;
@@ -36,7 +44,7 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
       approvalProgramFileName,
       clearProgramFileName,
       {
-        sender: master.account,
+        sender: admin.account,
         globalBytes: 1,
         globalInts: 3,
         localBytes: 1,
@@ -46,18 +54,45 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
     ).appID; // This number is always 9
 
     // opt-in to the app
-    runtime.optInToApp(master.address, appID, {}, {});
+    runtime.optInToApp(admin.address, appID, {}, {});
     runtime.optInToApp(alice.address, appID, {}, {});
     runtime.optInToApp(bob.address, appID, {}, {});
 
+    syncAccounts();
     // create asset
   });
 
+  describe("related ASA", function () {
+    it("asset creation", function () {
+      syncAccounts();
+      const ART = runtime.deployASA('$ART$', {
+        creator:
+        {
+          ...admin.account,
+          name: "asa-creator"
+        }
+      })
+      const aUSD = runtime.deployASA('aUSD', {
+        creator:
+        {
+          ...admin.account,
+          name: "asa-creator"
+        }
+      })
+      const ca = admin.createdAssets;
+      const artID = ART.assetID
+      const usdID = aUSD.assetID
+      console.log({ artID, usdID }); // DEV_LOG_TO_REMOVE
+      assert.isTrue(ca.has(artID) && ca.has(usdID));
+      console.log('ca : ', ca); // DEV_LOG_TO_REMOVE
+    })
+
+  })
 
   it("test initial global states", function () {
-    const sumEscrowed = runtime.getAccount(master.address).getGlobalState(appID, "+$ART$");
-    const sumIssued = runtime.getAccount(master.address).getGlobalState(appID, "+aUSD");
-    const initCRN = runtime.getAccount(master.address).getGlobalState(appID, "CRN");
+    const sumEscrowed = runtime.getAccount(admin.address).getGlobalState(appID, "+$ART$");
+    const sumIssued = runtime.getAccount(admin.address).getGlobalState(appID, "+aUSD");
+    const initCRN = runtime.getAccount(admin.address).getGlobalState(appID, "CRN");
     assert.isDefined(sumEscrowed);
     assert.isDefined(sumIssued);
     assert.isDefined(initCRN);
