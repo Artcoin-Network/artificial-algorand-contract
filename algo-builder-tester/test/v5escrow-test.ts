@@ -59,10 +59,17 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     runtime.optInToApp(bob.address, appID, {}, {});
 
     syncAccounts();
+    const _addresses = {
+      admin: admin.address,
+      alice: alice.address,
+      bob: bob.address
+    }
+    console.log('addresses : ', _addresses); // DEV_LOG_TO_REMOVE
+
     // create asset
   });
 
-  function createAssets() {
+  function createAssets() { // also dispense.
     syncAccounts();
     const ART = runtime.deployASA('$ART$', {
       creator:
@@ -81,22 +88,48 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     const adminAssets = admin.createdAssets;
     const artID = ART.assetID
     const usdID = aUSD.assetID
+
+    // opt-in to the asa with alice and bob
+    runtime.optIntoASA(artID, alice.address, {});
+    runtime.optIntoASA(artID, bob.address, {});
+    runtime.optIntoASA(usdID, alice.address, {});
+    runtime.optIntoASA(usdID, bob.address, {});
+
+    // dispense 1k $ART$ to each alice and bob
+    syncAccounts();
+    const dispenseTxParams: types.AssetTransferParam = {
+      type: types.TransactionType.TransferAsset,
+      sign: types.SignType.SecretKey,
+      fromAccount: admin.account,
+      assetID: artID,
+      payFlags: { totalFee: fee },
+      toAccountAddr: admin.address,
+      amount: 1000,
+    }
+    dispenseTxParams.toAccountAddr = alice.address;
+    runtime.executeTx(dispenseTxParams);
+    dispenseTxParams.toAccountAddr = bob.address;
+    runtime.executeTx(dispenseTxParams);
+
     return { adminAssets, artID, usdID }
   }
 
   describe("related ASA", function () {
-    it("asset creation", function () {
+    it.only("asset creation and dispense", function () {
       const { adminAssets, artID, usdID } = createAssets()
       syncAccounts();
+      console.log('{ adminAssets, artID, usdID } : ', { adminAssets, artID, usdID }); // DEV_LOG_TO_REMOVE
       assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
+      console.log('alice.assets : ', alice.assets); // DEV_LOG_TO_REMOVE
+
     })
   })
 
   describe("mint smart contract", function () {
     it("test initial global states", function () {
       syncAccounts();
-      const sumEscrowed = admin.getGlobalState(appID, "+$ART$");
-      const sumIssued = admin.getGlobalState(appID, "+aUSD");
+      const sumEscrowed = admin.getGlobalState(appID, STABLE_SUM);
+      const sumIssued = admin.getGlobalState(appID, STABLE_SUM);
       const initCRN = admin.getGlobalState(appID, "CRN");
       assert.isDefined(sumEscrowed);
       assert.isDefined(sumIssued);
@@ -107,6 +140,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     });
 
     it.skip("escrow 100 art to mint 20 aUSD", function () {
+      createAssets();
       syncAccounts();
       const txParams: types.AppCallsParam = {
         type: types.TransactionType.CallApp,
