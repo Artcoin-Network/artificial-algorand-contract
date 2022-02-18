@@ -1,15 +1,15 @@
 import { AccountStore, Runtime, getProgram } from "@algo-builder/runtime";
-import { mkTxParams, types } from "@algo-builder/web";
 
 import { LogicSigAccount } from "algosdk";
 import { assert } from "chai";
+import { types } from "@algo-builder/web";
 
 const DESCRIPTION = `
 TST1, TST2: Test Global.group_size()
 `
 const adminBalance = BigInt(1e8);
 const fee = 1e3;
-describe.only('algob-tester', function () {
+describe.skip('algob-tester', function () {
   let admin = new AccountStore(adminBalance);
   let alice = new AccountStore(adminBalance);
   let billy = new AccountStore(adminBalance);
@@ -174,6 +174,7 @@ describe.only('algob-tester', function () {
     };
     callAppParams.appArgs = ['str:TST5', 'str:txn']
     runtime.executeTx(callAppParams)
+    // we've already known that txn can read by gtxn[0] from TST2
     assert.equal(fetchGlobalBytes('console'), 'txn>txn')
 
     callAppParams.appArgs = ['str:TST5', 'str:gtxn']

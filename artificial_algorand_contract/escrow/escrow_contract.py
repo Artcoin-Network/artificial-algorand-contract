@@ -10,6 +10,7 @@ from pyteal import (
     Div,
     Ed25519Verify,
     Global,
+    Gtxn,
     If,
     InnerTxnBuilder,
     Int,
@@ -49,7 +50,7 @@ CRD = Int(
 
 """ Smart contract typing """
 cmd_list: TealCmdList = [
-    ["escrow"],  # send $ART$ to escrow
+    ["mint"],  # send $ART$ to mint
     ["redeem"],  # redeem $ART$ from escrow
 ]
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
@@ -81,6 +82,113 @@ def approval_program():
     SucceedSeq = Seq(Return(Int(1)))
     FailSeq = Seq(Return(Int(0)))
 
+    scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used once in mint
+    scratch_returning = ScratchVar(TealType.uint64)  # $ART$, only used once in burn
+
+    """ User mint $ART$ to get aUSD """
+    on_mint = Seq(
+        scratch_issuing.store(
+            ShiftRight(
+                Div(Gtxn[1].asset_amount(), App.globalGet(Bytes("CRN"))), Int(CRDD)
+            )
+        ),
+        # Issue aUSD to user with an InnerTxn
+        InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
+        InnerTxnBuilder.SetFields(
+            {
+                # TODO:bug: :down: this line has some problem
+                # TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
+                TxnField.xfer_asset: Int(STABLE_ID),
+                TxnField.asset_amount: scratch_issuing.load(),
+                TxnField.sender: Global.creator_address(),
+                TxnField.asset_receiver: Gtxn[1].sender(),
+                TxnField.asset_close_to: Global.creator_address(),
+            }
+        ),
+        InnerTxnBuilder.Submit(),  # Run TXN, Issue aUSD to user
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(ASSET_NAME),
+            Add(App.localGet(Txn.sender(), Bytes(ASSET_NAME)), Txn.asset_amount()),
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(STABLE_NAME),
+            Add(
+                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
+                scratch_issuing.load(),
+            ),
+        ),
+        App.globalPut(
+            Bytes(SUM_ASSET),
+            Add(App.globalGet(Bytes(SUM_ASSET)), (Gtxn[1].asset_amount())),
+        ),
+        App.globalPut(
+            Bytes(SUM_STABLE),
+            Add(App.globalGet(Bytes(SUM_STABLE)), scratch_issuing.load()),
+        ),
+        SucceedSeq,
+    )
+
+    on_burn = Seq(
+        # user redeem $ART$ from aUSD, assuming user has enough escrowed $ART$
+        [
+            # TODO:fix: check asset == $ART$, not any random asset
+            scratch_returning.store(
+                ShiftRight(
+                    Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN"))),
+                    Int(CRDD),
+                )
+            ),
+            # Issue aUSD to user
+            InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields(
+                {
+                    # TODO:bug: :down: this line has some problem
+                    TxnField.note: Bytes(
+                        f"issuance of aUSD on TXN_ID: {Gtxn[1].tx_id()}"
+                    ),
+                    TxnField.xfer_asset: Int(ASSET_ID),
+                    TxnField.asset_amount: scratch_returning.load(),
+                    TxnField.asset_receiver: Gtxn[1].sender(),
+                    TxnField.sender: Global.creator_address(),
+                    TxnField.asset_close_to: Global.creator_address(),
+                }
+            ),
+            InnerTxnBuilder.Submit(),  # Issue aUSD to user
+            App.localPut(
+                Gtxn[1].sender(),
+                Bytes(ASSET_NAME),
+                Minus(
+                    App.localGet(Txn.sender(), Bytes(ASSET_NAME)),
+                    Txn.asset_amount(),
+                ),
+            ),
+            App.localPut(
+                Gtxn[1].sender(),
+                Bytes(STABLE_NAME),
+                Minus(
+                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
+                    scratch_returning.load(),
+                ),
+            ),
+            App.globalPut(
+                Bytes(SUM_ASSET),
+                Minus(
+                    App.globalGet(Bytes(SUM_ASSET)),
+                    (Gtxn[1].asset_amount()),
+                ),
+            ),
+            App.globalPut(
+                Bytes(SUM_STABLE),
+                Minus(
+                    App.globalGet(Bytes(SUM_STABLE)),
+                    scratch_returning.load(),
+                ),
+            ),
+            SucceedSeq,
+        ]
+    )
     on_creation = Seq(
         App.globalPut(Bytes(SUM_ASSET), Int(0)),
         App.globalPut(Bytes(SUM_STABLE), Int(0)),
@@ -98,137 +206,35 @@ def approval_program():
 
     on_update_app = Return(
         And(
-            Global.creator_address() == Txn.sender(),  # TODO: manager
+            Global.creator_address() == Gtxn[0].sender(),  # TODO: manager
             Ed25519Verify(
-                data=Txn.application_args[0],
-                sig=Txn.application_args[1],
-                key=Txn.application_args[2],
+                data=Gtxn[0].application_args[0],
+                sig=Gtxn[0].application_args[1],
+                key=Gtxn[0].application_args[2],
             ),  # security, should use a password, high cost is ok.
         )
     )
 
     on_deleteapp = on_update_app  # Same security level as update_app
 
-    scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used once in escrow
-    scratch_returning = ScratchVar(TealType.uint64)  # $ART$, only used once in redeem
-
-    """ User escrow $ART$ to get aUSD """
-    on_escrow = Seq(
-        scratch_issuing.store(
-            ShiftRight(Div(Txn.asset_amount(), App.globalGet(Bytes("CRN"))), Int(CRDD))
-        ),  # Remember that all needs Int()!
-        # Issue aUSD to user
-        InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
-        InnerTxnBuilder.SetFields(
-            {
-                # TODO:bug: :down: this line has some problem
-                # TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                TxnField.xfer_asset: Int(STABLE_ID),
-                TxnField.asset_amount: scratch_issuing.load(),
-                TxnField.sender: Global.creator_address(),
-                TxnField.asset_receiver: Txn.sender(),
-                TxnField.asset_close_to: Global.creator_address(),
-            }
-        ),
-        InnerTxnBuilder.Submit(),  # Issue aUSD to user
-        App.localPut(
-            Txn.sender(),
-            Bytes(ASSET_NAME),
-            Add(App.localGet(Txn.sender(), Bytes(ASSET_NAME)), Txn.asset_amount()),
-        ),
-        App.localPut(
-            Txn.sender(),
-            Bytes(STABLE_NAME),
-            Add(
-                App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
-                scratch_issuing.load(),
-            ),
-        ),
-        App.globalPut(
-            Bytes(SUM_ASSET),
-            Add(App.globalGet(Bytes(SUM_ASSET)), (Txn.asset_amount())),
-        ),
-        App.globalPut(
-            Bytes(SUM_STABLE),
-            Add(App.globalGet(Bytes(SUM_STABLE)), scratch_issuing.load()),
-        ),
-        SucceedSeq,
-    )
-
-    on_redeem = Seq(
-        # user redeem $ART$ from aUSD, assuming user has enough escrowed $ART$
-        [
-            # TODO:fix: check asset == $ART$, not any random asset
-            scratch_returning.store(
-                ShiftRight(
-                    Mul((Txn.asset_amount()), App.globalGet(Bytes("CRN"))), Int(CRDD)
-                )
-            ),
-            # Issue aUSD to user
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    # TODO:bug: :down: this line has some problem
-                    TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                    TxnField.xfer_asset: Int(ASSET_ID),
-                    TxnField.asset_amount: scratch_returning.load(),
-                    TxnField.asset_receiver: Txn.sender(),
-                    TxnField.sender: Global.creator_address(),
-                    TxnField.asset_close_to: Global.creator_address(),
-                }
-            ),
-            InnerTxnBuilder.Submit(),  # Issue aUSD to user
-            App.localPut(
-                Txn.sender(),
-                Bytes(ASSET_NAME),
-                Minus(
-                    App.localGet(Txn.sender(), Bytes(ASSET_NAME)),
-                    Txn.asset_amount(),
-                ),
-            ),
-            App.localPut(
-                Txn.sender(),
-                Bytes(STABLE_NAME),
-                Minus(
-                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
-                    scratch_returning.load(),
-                ),
-            ),
-            App.globalPut(
-                Bytes(SUM_ASSET),
-                Minus(
-                    App.globalGet(Bytes(SUM_ASSET)),
-                    (Txn.asset_amount()),
-                ),
-            ),
-            App.globalPut(
-                Bytes(SUM_STABLE),
-                Minus(
-                    App.globalGet(Bytes(SUM_STABLE)),
-                    scratch_returning.load(),
-                ),
-            ),
-            SucceedSeq,
-        ]
-    )
-
     on_call = Cond(
         [
             And(
                 Global.group_size() == Int(1),
-                Txn.application_args[0] == Bytes("escrow"),
+                Gtxn[0].application_args[0] == Bytes("mint"),
             ),
-            on_escrow,
+            on_mint,
         ],
         [
             And(
                 Global.group_size() == Int(1),
-                Txn.application_args[0] == Bytes("redeem"),
-                App.localGet(Txn.sender(), Bytes(STABLE_NAME)) >= Txn.asset_amount(),
+                Gtxn[0].application_args[0] == Bytes("burn"),
+                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME))
+                >= Gtxn[1].asset_amount(),
                 # correct logic depend on ACID (atomicity, consistency, isolation, durability).
                 # cannot be used to cheat (will not parallel) for ACID.
             ),
-            on_redeem,
+            on_burn,
         ],
         [
             Int(1),
@@ -237,12 +243,13 @@ def approval_program():
     )
 
     program = Cond(
-        [Txn.application_id() == Int(0), on_creation],
-        [Txn.on_completion() == OnComplete.OptIn, on_opt_in],
-        [Txn.on_completion() == OnComplete.CloseOut, on_close_out],
-        [Txn.on_completion() == OnComplete.UpdateApplication, on_update_app],
-        [Txn.on_completion() == OnComplete.DeleteApplication, on_deleteapp],
-        [Txn.on_completion() == OnComplete.NoOp, on_call],
+        [Gtxn[0].sender() != Gtxn[1].sender(), FailSeq],
+        [Gtxn[0].on_completion() == OnComplete.NoOp, on_call],
+        [Gtxn[0].on_completion() == OnComplete.CloseOut, on_close_out],
+        [Gtxn[0].on_completion() == OnComplete.OptIn, on_opt_in],
+        [Gtxn[0].on_completion() == OnComplete.UpdateApplication, on_update_app],
+        [Gtxn[0].application_id() == Int(0), on_creation],
+        [Gtxn[0].on_completion() == OnComplete.DeleteApplication, on_deleteapp],
         # checked picture https://github.com/algorand/docs/blob/92d2bb3929d2301e1d3acfd164b0621593fcac5b/docs/imgs/sccalltypes.png
     )
     # Mode.Application specifies that this is a smart contract
