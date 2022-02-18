@@ -24,49 +24,46 @@ def algob_tester(RECEIVER_ADDRESS=None):
             Txn.close_remainder_to() == Global.zero_address(),
         ) """
     ## INIT DONE ##
-    SuccessList = [
+    SuccessSeq = Seq(
         App.globalPut(Bytes("runstate"), Bytes("succeeded")),
         Return(Int(1)),
-    ]
-    EndFail = Seq(
+    )
+    FailSeq = Seq(
         App.globalPut(Bytes("runstate"), Bytes("failed")),
         App.globalPut(Bytes("runstate"), Bytes("failed")),
         Return(Int(0)),
     )
     reset = Seq(
         App.globalPut(Bytes("console"), Bytes("empty")),
-        Return(Int(1)),
+        SuccessSeq,
     )
     tst5 = Cond(
         [
             Txn.application_args[1] == Bytes("txn"),
-            Seq(
-                App.globalPut(Bytes("console"), Bytes("txn>txn")),
-                Return(Int(1)),
-            ),
+            Seq(App.globalPut(Bytes("console"), Bytes("txn>txn")), SuccessSeq),
         ],
         [
             Txn.application_args[1] == Bytes("gtxn"),
             Seq(
                 App.globalPut(Bytes("console"), Bytes("gtxn>txn")),
-                Return(Int(1)),
+                SuccessSeq,
             ),
         ],
         [
             Gtxn[0].application_args[1] == Bytes("txn"),
             Seq(
                 App.globalPut(Bytes("console"), Bytes("txn>gtxn")),
-                Return(Int(1)),
+                SuccessSeq,
             ),
         ],
         [
             Gtxn[0].application_args[1] == Bytes("gtxn"),
             Seq(
                 App.globalPut(Bytes("console"), Bytes("gtxn>gtxn")),
-                Return(Int(1)),
+                SuccessSeq,
             ),
         ],
-        [Int(1), Return(Int(0))],
+        [Int(1), FailSeq],
     )  # cannot write Seq(Cond,Return(Int(1))): "All cond body should have same return type"
 
     sub1 = Seq(
@@ -77,17 +74,17 @@ def algob_tester(RECEIVER_ADDRESS=None):
         # App.globalPut(Bytes("var1"), Mul(App.globalGet(Bytes("var1")), Int(2))),
         If(
             Int(1),
-            Return(Int(1)),
-            Return(Int(0)),
+            SuccessSeq,
+            FailSeq,
         ),
     )
     group1pass = Seq(
         App.globalPut(Bytes("console"), Bytes("group1")),
-        Return(Int(1)),
+        SuccessSeq,
     )
     group2pass = Seq(
         App.globalPut(Bytes("console"), Bytes("group2")),
-        Return(Int(1)),
+        SuccessSeq,
     )
     on_creation = Seq(
         App.globalPut(Bytes("called"), Int(0)),
@@ -96,12 +93,12 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("var1"), Int(1)),
         App.globalPut(Bytes("var2"), Int(2)),
         App.globalPut(Bytes("var3"), Int(3)),
-        Return(Int(1)),
+        SuccessSeq,
     )
-    on_opt_in = Return(Int(1))
-    on_close_out = Return(Int(1))
-    on_update_app = Return(Int(1))
-    on_delete_app = Return(Int(1))
+    on_opt_in = SuccessSeq
+    on_close_out = SuccessSeq
+    on_update_app = SuccessSeq
+    on_delete_app = SuccessSeq
     on_call = Seq(
         App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
         Cond(
@@ -117,7 +114,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
             [Global.group_size() == Int(1), group1pass],  # TST1, TST2
             [Global.group_size() == Int(2), group2pass],  # TST4
             # :up: len(list) cause compile error
-            [Int(1), Return(Int(0))],  # TST3
+            [Int(1), FailSeq],  # TST3
         ),
     )
 
