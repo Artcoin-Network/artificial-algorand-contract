@@ -1,4 +1,4 @@
-#
+# code like TST1 is to relate the test file `algob-tester.ts`.
 # TODO: rekey and close remainder
 # Add directory to path so that algobpy can be imported
 import sys
@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, ".")
 
 from algobpy.parse import parse_params
-from pyteal import *
+from pyteal import *  # type: ignore wildcard import
 
 
 def algob_tester(RECEIVER_ADDRESS=None):
@@ -24,13 +24,56 @@ def algob_tester(RECEIVER_ADDRESS=None):
             Txn.close_remainder_to() == Global.zero_address(),
         ) """
     ## INIT DONE ##
-
-    on_creation = Return(Int(1))
+    Success = Seq(
+        App.globalPut(Bytes("succeeded"), App.globalGet(Bytes("succeeded")) + Int(1)),
+        Return(Int(1)),
+    )
+    sub1 = Seq(
+        App.globalPut(
+            Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
+        ),  # has to use MUL
+        App.globalPut(Bytes("console"), Bytes("group1")),
+        # App.globalPut(Bytes("var1"), Mul(App.globalGet(Bytes("var1")), Int(2))),
+        If(
+            Int(1),
+            Success,
+            Return(Int(0)),
+        ),
+    )
+    group1pass = Seq(
+        App.globalPut(Bytes("console"), Bytes("group1")),
+        Return(Int(1)),
+    )
+    on_creation = Seq(
+        App.globalPut(Bytes("called"), Int(0)),
+        App.globalPut(Bytes("succeeded"), Int(0)),
+        App.globalPut(Bytes("console"), Bytes("empty")),
+        App.globalPut(Bytes("var1"), Int(1)),
+        App.globalPut(Bytes("var2"), Int(2)),
+        App.globalPut(Bytes("var3"), Int(3)),
+        Return(Int(1)),
+    )
     on_opt_in = Return(Int(1))
     on_close_out = Return(Int(1))
     on_update_app = Return(Int(1))
     on_delete_app = Return(Int(1))
-    on_call = Return(Int(1))
+    on_call = Seq(
+        App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
+        Cond(
+            [
+                And(
+                    Global.group_size() == Int(1),
+                    Txn.application_args[0] == Bytes("callsub1"),
+                ),
+                sub1,
+            ],
+            [
+                Global.group_size() == Int(1),  # TST1, TST2
+                group1pass,
+            ],
+            [Int(1), Return(Int(0))],
+        ),
+    )
 
     program = Cond(
         [Txn.application_id() == Int(0), on_creation],
@@ -57,6 +100,11 @@ if __name__ == "__main__":
         _params = parse_params(sys.argv[1], params)
         if _params:
             param = _params
+    compiled = compileTeal(algob_tester(), Mode.Application)
 
-    print(compileTeal(algob_tester(), Mode.Application))
+    """write to file"""
+    # with open("algob-tester.teal", "w") as f:
+    #     f.write(compiled)
+
+    print(compiled)
     # print(compileTeal(algob_tester(params["RECEIVER_ADDRESS"]), Mode.Signature))

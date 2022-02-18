@@ -24,6 +24,10 @@ describe.only('algob-tester', function () {
     billy = runtime.getAccount(billy.address);
   }
 
+  function fetchGlobalBytes(key: string) {
+    syncAccounts();
+    return new TextDecoder("utf-8").decode(admin.getGlobalState(appID, key) as Uint8Array)
+  }
   this.beforeAll(function () {
     runtime = new Runtime([admin, alice, billy]);
     syncAccounts()
@@ -37,9 +41,9 @@ describe.only('algob-tester', function () {
       {
         sender: admin.account,
         globalBytes: 1,
-        globalInts: 3,
-        localBytes: 1,
-        localInts: 2
+        globalInts: 5,
+        localBytes: 0,
+        localInts: 0
       },
       {}
     ).appID; // This number is always 9
@@ -50,8 +54,35 @@ describe.only('algob-tester', function () {
     runtime.optInToApp(billy.address, appID, {}, {});
 
   })
-  it('algob tester', function () {
 
+  it('TST1: Global.group_size() == Int(1)', function () {
+    // call the app with one transaction
+    const callAppParams: types.AppCallsParam = {
+      type: types.TransactionType.CallApp,
+      sign: types.SignType.SecretKey,
+      fromAccount: alice.account,
+      appID: appID,
+      payFlags: { totalFee: fee },
+    };
+    runtime.executeTx(callAppParams);
+    // runtime.executeTx([callAppParams, escrowTxParams]);
+    assert.equal(fetchGlobalBytes('console'), 'group1')
+  })
+  it('TST2: Global.group_size() == Int(1) without JS Array', function () {
+    // call the app with one transaction
+    const callAppParams: types.AppCallsParam = {
+      type: types.TransactionType.CallApp,
+      sign: types.SignType.SecretKey,
+      fromAccount: alice.account,
+      appID: appID,
+      payFlags: { totalFee: fee },
+    };
+    runtime.executeTx([callAppParams]);
+    // runtime.executeTx([callAppParams, escrowTxParams]);
+    assert.equal(fetchGlobalBytes('console'), 'group1')
+  })
+
+  it('TST2: Global.group_size() == Int(1) with JS Array', function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
@@ -69,10 +100,5 @@ describe.only('algob-tester', function () {
       toAccountAddr: admin.address,
       amountMicroAlgos: BigInt(1e3),
     }
-
-    runtime.executeTx(callAppParams);
-    // runtime.executeTx([callAppParams, escrowTxParams]);
-
-
   })
 })
