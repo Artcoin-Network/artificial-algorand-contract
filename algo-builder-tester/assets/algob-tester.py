@@ -28,6 +28,10 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("succeeded"), App.globalGet(Bytes("succeeded")) + Int(1)),
         Return(Int(1)),
     )
+    reset = Seq(
+        App.globalPut(Bytes("console"), Bytes("empty")),
+        Return(Int(1)),
+    )
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
@@ -42,6 +46,10 @@ def algob_tester(RECEIVER_ADDRESS=None):
     )
     group1pass = Seq(
         App.globalPut(Bytes("console"), Bytes("group1")),
+        Return(Int(1)),
+    )
+    group2pass = Seq(
+        App.globalPut(Bytes("console"), Bytes("group2")),
         Return(Int(1)),
     )
     on_creation = Seq(
@@ -60,6 +68,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
     on_call = Seq(
         App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
         Cond(
+            [Gtxn[0].application_args[0] == Bytes("reset"), reset],  # resetApp
             [
                 And(
                     Global.group_size() == Int(1),
@@ -67,9 +76,10 @@ def algob_tester(RECEIVER_ADDRESS=None):
                 ),
                 sub1,
             ],
-            [Global.group_size() == Int(1), group1pass],  # TST1, TST2, TST3
+            [Global.group_size() == Int(1), group1pass],  # TST1, TST2
+            [Global.group_size() == Int(2), group2pass],  # TST4
             # :up: len(list) cause compile error
-            [Int(1), Return(Int(0))],
+            [Int(1), Return(Int(0))],  # TST3
         ),
     )
 
