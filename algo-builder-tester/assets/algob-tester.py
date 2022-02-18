@@ -33,9 +33,11 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("runstate"), Bytes("failed")),
         Return(Int(0)),
     )
-    reset = Seq(
-        App.globalPut(Bytes("console"), Bytes("empty")),
-        SuccessSeq,
+    reset = Seq(  # Seq accepts a list of statements or multiple args. Seq(*cmd_list) and Seq(cmd_list) have same effect.
+        [
+            App.globalPut(Bytes("console"), Bytes("empty")),
+            SuccessSeq,
+        ]
     )
     tst5 = Cond(
         [
