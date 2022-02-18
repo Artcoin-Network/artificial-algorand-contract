@@ -37,3 +37,4 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+algo-builder-tester/algob-tester.teal
