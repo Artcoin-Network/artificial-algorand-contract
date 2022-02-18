@@ -3,7 +3,7 @@
 from .algo_config import algo_config
 
 client = algo_config.client
-mainAcc = algo_config.accounts.main
+adminAcc = algo_config.accounts.admin
 
 
 def get_account_info(account_addr: str) -> dict:
@@ -11,5 +11,5 @@ def get_account_info(account_addr: str) -> dict:
 
 
 def check_main():
-    account_info = get_account_info(mainAcc.addr)
-    print("mainAcc info:", account_info)
+    account_info = get_account_info(adminAcc.addr)
+    print("adminAcc info:", account_info)

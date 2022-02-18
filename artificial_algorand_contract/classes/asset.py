@@ -9,7 +9,7 @@ from .algo_config import algo_config
 from .algorand import AlgoAcc
 
 client = algo_config.client
-mainAcc: AlgoAcc = algo_config.accounts.main
+adminAcc: AlgoAcc = algo_config.accounts.admin
 
 
 class AssetConfig(TypedDict):
@@ -36,7 +36,7 @@ def create_asset(
     )
 
     txn = AssetConfigTxn(sp=params, **asset_config)
-    signed_txn = txn.sign(mainAcc.get_secret_key())
+    signed_txn = txn.sign(adminAcc.get_secret_key())
     txid = client.send_transaction(signed_txn)
     print(txid)
     # ptx = client.pending_transaction_info(txid) There's no info about asset ID.
@@ -52,16 +52,16 @@ def create_asset(
 
 ART_asset_config: AssetConfig = {
     # TODO: this should load from env file
-    "sender": mainAcc.addr,
+    "sender": adminAcc.addr,
     # there's no params (sp)
     "total": 100000,
     "default_frozen": False,
     "unit_name": "$ART$",
     "asset_name": "$artificial$",
-    "manager": mainAcc.addr,
-    "reserve": mainAcc.addr,
-    "freeze": mainAcc.addr,
-    "clawback": mainAcc.addr,
+    "manager": adminAcc.addr,
+    "reserve": adminAcc.addr,
+    "freeze": adminAcc.addr,
+    "clawback": adminAcc.addr,
     "url": "https://artcoin.network/",
     "decimals": 4,  # For 1>>16 unit in contract. More decimals causes inaccuracy.
 }
@@ -76,16 +76,16 @@ def create_ART():
 
 aUSD_asset_config: AssetConfig = {
     # TODO: this should load from env file
-    "sender": mainAcc.addr,
+    "sender": adminAcc.addr,
     # there's no params (sp)
     "total": 100000,
     "default_frozen": False,
     "unit_name": "aUSD",
     "asset_name": "$artificial$ USD",
-    "manager": mainAcc.addr,
-    "reserve": mainAcc.addr,
-    "freeze": mainAcc.addr,
-    "clawback": mainAcc.addr,
+    "manager": adminAcc.addr,
+    "reserve": adminAcc.addr,
+    "freeze": adminAcc.addr,
+    "clawback": adminAcc.addr,
     "url": "https://artcoin.network/",
     "decimals": 4,  # For 1>>16 unit in contract. More decimals causes inaccuracy.
 }
@@ -100,16 +100,16 @@ def create_aUSD():
 
 test_asset_config: AssetConfig = {
     # TODO: this should load from env file
-    "sender": mainAcc.addr,
+    "sender": adminAcc.addr,
     # there's no params (sp)
     "total": 1234_000000,
     "default_frozen": False,
     "unit_name": "test",
     "asset_name": "test",
-    "manager": mainAcc.addr,
-    "reserve": mainAcc.addr,
-    "freeze": mainAcc.addr,
-    "clawback": mainAcc.addr,
+    "manager": adminAcc.addr,
+    "reserve": adminAcc.addr,
+    "freeze": adminAcc.addr,
+    "clawback": adminAcc.addr,
     "url": "https://artcoin.network/",
     "decimals": 5,  # For 1>>16 unit in contract. More decimals causes inaccuracy.
 }

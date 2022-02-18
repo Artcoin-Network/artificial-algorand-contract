@@ -283,7 +283,7 @@ def full_contract_test():
     clear_program = compile_program(algod_client, clear_program_source)
 
     # user declared account mnemonics
-    creator_mnemonic = algo_config.accounts.main.request_mnemonics()
+    creator_mnemonic = algo_config.accounts.admin.request_mnemonics()
     user_mnemonic = algo_config.accounts.bob.request_mnemonics()
     # define private keys
     creator_private_key = mnemonic.to_private_key(creator_mnemonic)
@@ -356,6 +356,6 @@ def full_contract_test():
 
 def test_clean_up(app_id: int):
     algod_client = algo_config.client
-    creator_mnemonic = algo_config.accounts.main.request_mnemonics()
+    creator_mnemonic = algo_config.accounts.admin.request_mnemonics()
     creator_private_key = mnemonic.to_private_key(creator_mnemonic)
     delete_app(algod_client, creator_private_key, app_id)
