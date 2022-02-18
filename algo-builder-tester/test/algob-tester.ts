@@ -43,8 +43,8 @@ describe.only('algob-tester', function () {
       clearProgramFileName,
       {
         sender: admin.account,
-        globalBytes: 1,
-        globalInts: 5,
+        globalBytes: 2,
+        globalInts: 4,
         localBytes: 0,
         localInts: 0
       },
@@ -161,28 +161,42 @@ describe.only('algob-tester', function () {
     assert.equal(fetchGlobalBytes('console'), 'group2')
     runtime.executeTx([callAppParams, callAppParams])
     assert.equal(fetchGlobalBytes('console'), 'group2')
-
-
   })
-  it.skip('TST3: Global.group_size() == Int(1) with JS Array, fail with len2', function () {
+
+  it('TST5: `Gtxn[0]` and `Txn` are the same', function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: ['str:escrow', 'int:100']
+      appArgs: []
     };
+    callAppParams.appArgs = ['str:TST5', 'str:txn']
+    runtime.executeTx(callAppParams)
+    assert.equal(fetchGlobalBytes('console'), 'txn>txn')
 
-    const escrowTxParams: types.AlgoTransferParam = {
-      type: types.TransactionType.TransferAlgo,
+    callAppParams.appArgs = ['str:TST5', 'str:gtxn']
+    runtime.executeTx([callAppParams]) // this is a gtxn, but can read by txn
+    assert.equal(fetchGlobalBytes('console'), 'gtxn>txn')
+    assert.notEqual(fetchGlobalBytes('console'), 'gtxn>gtxn')
+  })
+
+  // it.skip('TST7: str:str:something', function () {
+  it.skip('TST6: MUL is not? necessary than `*`', function () {
+    const callAppParams: types.AppCallsParam = {
+      type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
-      fromAccount: admin.account,
+      fromAccount: alice.account,
+      appID: appID,
       payFlags: { totalFee: fee },
-      toAccountAddr: admin.address,
-      amountMicroAlgos: BigInt(1e3),
-    }
-    assert.throws(() => { runtime.executeTx([callAppParams, escrowTxParams]) }, 'RUNTIME_ERR1007: Teal code rejected by logic')
+      appArgs: []
+    };
+    callAppParams.appArgs = ['str:TST5', 'str:txn']
+    runtime.executeTx(callAppParams)
+    callAppParams.appArgs = ['str:TST5', 'str:gtxn']
+    runtime.executeTx([callAppParams])
+    assert.throws(() => { runtime.executeTx([callAppParams]) }, 'RUNTIME_ERR1007: Teal code rejected by logic')
     // runtime.executeTx();
   })
   it.skip('TST3: Global.group_size() == Int(1) with JS Array, fail with len2', function () {

@@ -24,14 +24,51 @@ def algob_tester(RECEIVER_ADDRESS=None):
             Txn.close_remainder_to() == Global.zero_address(),
         ) """
     ## INIT DONE ##
-    Success = Seq(
-        App.globalPut(Bytes("succeeded"), App.globalGet(Bytes("succeeded")) + Int(1)),
+    SuccessList = [
+        App.globalPut(Bytes("runstate"), Bytes("succeeded")),
         Return(Int(1)),
+    ]
+    EndFail = Seq(
+        App.globalPut(Bytes("runstate"), Bytes("failed")),
+        App.globalPut(Bytes("runstate"), Bytes("failed")),
+        Return(Int(0)),
     )
     reset = Seq(
         App.globalPut(Bytes("console"), Bytes("empty")),
         Return(Int(1)),
     )
+    tst5 = Cond(
+        [
+            Txn.application_args[1] == Bytes("txn"),
+            Seq(
+                App.globalPut(Bytes("console"), Bytes("txn>txn")),
+                Return(Int(1)),
+            ),
+        ],
+        [
+            Txn.application_args[1] == Bytes("gtxn"),
+            Seq(
+                App.globalPut(Bytes("console"), Bytes("gtxn>txn")),
+                Return(Int(1)),
+            ),
+        ],
+        [
+            Gtxn[0].application_args[1] == Bytes("txn"),
+            Seq(
+                App.globalPut(Bytes("console"), Bytes("txn>gtxn")),
+                Return(Int(1)),
+            ),
+        ],
+        [
+            Gtxn[0].application_args[1] == Bytes("gtxn"),
+            Seq(
+                App.globalPut(Bytes("console"), Bytes("gtxn>gtxn")),
+                Return(Int(1)),
+            ),
+        ],
+        [Int(1), Return(Int(0))],
+    )  # cannot write Seq(Cond,Return(Int(1))): "All cond body should have same return type"
+
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
@@ -40,7 +77,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
         # App.globalPut(Bytes("var1"), Mul(App.globalGet(Bytes("var1")), Int(2))),
         If(
             Int(1),
-            Success,
+            Return(Int(1)),
             Return(Int(0)),
         ),
     )
@@ -54,7 +91,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
     )
     on_creation = Seq(
         App.globalPut(Bytes("called"), Int(0)),
-        App.globalPut(Bytes("succeeded"), Int(0)),
+        App.globalPut(Bytes("runstate"), Bytes("created")),
         App.globalPut(Bytes("console"), Bytes("empty")),
         App.globalPut(Bytes("var1"), Int(1)),
         App.globalPut(Bytes("var2"), Int(2)),
@@ -69,6 +106,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
         Cond(
             [Gtxn[0].application_args[0] == Bytes("reset"), reset],  # resetApp
+            [Gtxn[0].application_args[0] == Bytes("TST5"), tst5],  # TST5  # TST5
             [
                 And(
                     Global.group_size() == Int(1),
@@ -111,8 +149,8 @@ if __name__ == "__main__":
     compiled = compileTeal(algob_tester(), Mode.Application)
 
     """write to file"""
-    # with open("algob-tester.teal", "w") as f:
-    #     f.write(compiled)
+    with open("algob-tester.teal", "w") as f:
+        f.write(compiled)
 
     print(compiled)
     # print(compileTeal(algob_tester(params["RECEIVER_ADDRESS"]), Mode.Signature))
