@@ -4,6 +4,9 @@ import { mkTxParams, types } from "@algo-builder/web";
 import { LogicSigAccount } from "algosdk";
 import { assert } from "chai";
 
+const DESCRIPTION = `
+TST1, TST2: Test Global.group_size()
+`
 const adminBalance = BigInt(1e8);
 const fee = 1e3;
 describe.only('algob-tester', function () {
@@ -55,7 +58,7 @@ describe.only('algob-tester', function () {
 
   })
 
-  it('TST1: Global.group_size() == Int(1)', function () {
+  it('TST1: Global.group_size() == Int(1) without JS Array', function () {
     // call the app with one transaction
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
@@ -68,7 +71,7 @@ describe.only('algob-tester', function () {
     // runtime.executeTx([callAppParams, escrowTxParams]);
     assert.equal(fetchGlobalBytes('console'), 'group1')
   })
-  it('TST2: Global.group_size() == Int(1) without JS Array', function () {
+  it('TST2: Global.group_size() == Int(1) with JS Array', function () {
     // call the app with one transaction
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
@@ -82,7 +85,7 @@ describe.only('algob-tester', function () {
     assert.equal(fetchGlobalBytes('console'), 'group1')
   })
 
-  it('TST2: Global.group_size() == Int(1) with JS Array', function () {
+  it('TST3: Global.group_size() == Int(1) with JS Array, fail with len2', function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
@@ -100,5 +103,7 @@ describe.only('algob-tester', function () {
       toAccountAddr: admin.address,
       amountMicroAlgos: BigInt(1e3),
     }
+    assert.throws(() => { runtime.executeTx([callAppParams, escrowTxParams]) }, 'RUNTIME_ERR1007: Teal code rejected by logic')
+    // runtime.executeTx();
   })
 })

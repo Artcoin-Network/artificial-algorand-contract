@@ -32,7 +32,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
         ),  # has to use MUL
-        App.globalPut(Bytes("console"), Bytes("group1")),
+        App.globalPut(Bytes("console"), Bytes("sub1run")),
         # App.globalPut(Bytes("var1"), Mul(App.globalGet(Bytes("var1")), Int(2))),
         If(
             Int(1),
@@ -67,10 +67,8 @@ def algob_tester(RECEIVER_ADDRESS=None):
                 ),
                 sub1,
             ],
-            [
-                Global.group_size() == Int(1),  # TST1, TST2
-                group1pass,
-            ],
+            [Global.group_size() == Int(1), group1pass],  # TST1, TST2, TST3
+            # :up: len(list) cause compile error
             [Int(1), Return(Int(0))],
         ),
     )
