@@ -145,7 +145,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     runtime.executeTx(dispenseTxParams);
   }
 
-  describe.only("related ASA", function () {
+  describe("related ASA", function () {
     it("asset creation and dispense", function () {
       const adminAssets = admin.createdAssets;
       syncAccounts();
@@ -153,6 +153,8 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       // dispensed 1k $ART$ to alice and billy 
       assert.equal(1000n, alice.assets.get(artID)!['amount']!);
       assert.equal(1000n, billy.assets.get(artID)!['amount']!);
+      // from admin was $ART$ dispensed
+      assert.equal(999999998000n, admin.assets.get(artID)!['amount']!);
     })
 
     it("Asset transfer", function () {
@@ -183,7 +185,13 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
 
   })
 
-  describe("mint smart contract", function () {
+  describe.only("mint smart contract", function () {
+    it("check creator", function () {
+      const ASACreator = runtime.getAssetAccount(artID);
+      const SCCreator = runtime.getApp(appID).creator;
+      assert.equal(ASACreator.address, admin.address);
+      assert.equal(SCCreator, admin.address);
+    });
     it("test initial global states", function () {
       syncAccounts();
       const sumEscrowed = admin.getGlobalState(appID, ASSET_SUM);
@@ -196,18 +204,16 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       assert.equal(sumIssued, 0n);
       assert.equal(initCRN, 5n << 32n);
     });
-
     it("assert alice opted into ASA", function () {
       syncAccounts();
       const last_msg: Uint8Array = alice.getLocalState(appID, "last_msg") as Uint8Array;
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
 
-
-    it("escrow 100 art to mint 20 aUSD", function () {
-      const adminAssets = admin.createdAssets;
+    it.only("escrow 100 art to mint 20 aUSD", function () {
+      // const adminAssets = admin.createdAssets;
+      // assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
       syncAccounts();
-      assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
 
       const mintCallParams: typesW.AppCallsParam = {
         type: typesW.TransactionType.CallApp,
@@ -228,17 +234,16 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
         payFlags: { totalFee: fee },
       }
 
+      syncAccounts();
+      assert.equal(1000n, alice.assets.get(artID)!['amount']!);
+      assert.equal(999999998000n, admin.assets.get(artID)!['amount']!);
+      const receipt = runtime.executeTx([mintCallParams, mintPayTxParams]);
+      console.log('receipt : ', receipt); // DEV_LOG_TO_REMOVE
+      syncAccounts();
+      assert.equal(900n, alice.assets.get(artID)!['amount']!);
+      assert.equal(999999998100n, admin.assets.get(artID)!['amount']!);
 
-
-
-      const rcp = runtime.executeTx([mintCallParams, mintPayTxParams]);
-      // console.log('rcp : ', rcp); // DEV_LOG_TO_REMOVE
-
-      const ASACreator = runtime.getAssetAccount(artID);
-      const SCCreator = runtime.getApp(appID).creator;
-      assert.equal(ASACreator.address, admin.address);
-      assert.equal(SCCreator, admin.address);
-
+      syncAccounts();
       const last_msg = u8a2Str(alice.getLocalState(appID, "last_msg") as Uint8Array)
       console.log('last_msg :', last_msg); // DEV_LOG_TO_REMOVE
       const aliceAsset = alice.getLocalState(appID, ASSET_NAME);

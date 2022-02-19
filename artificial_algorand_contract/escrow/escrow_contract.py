@@ -21,12 +21,12 @@ from pyteal import (
     Mode,
     Mul,
     OnComplete,
+    Or,
     Return,
     ScratchVar,
     Seq,
     ShiftRight,
     TealType,
-    Txn,
     TxnField,
     compileTeal,
 )
@@ -87,11 +87,14 @@ def approval_program():
         # TODO:feat: add timestamp to last_msg
         # didn't change local_bytes_scheme, nor updated teal_param
         return Seq(
-            App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes(msg + "")),
-            # If(
-            #     Bytes(msg) == Bytes(""),
-            # ),
-            Return(Int(1)),
+            If(
+                Bytes(msg) == Bytes(""),
+                App.localPut(
+                    Gtxn[0].sender(), Bytes("last_msg"), Bytes("[ERR]:EMPTY_ERR_MSG")
+                ),
+                App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes("[ERR]" + msg)),
+            ),
+            Return(Int(0)),
         )
 
     scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used once in mint
@@ -221,13 +224,11 @@ def approval_program():
     on_opt_in = Seq(
         App.localPut(Gtxn[0].sender(), Bytes(ASSET_NAME), Int(0)),
         App.localPut(Gtxn[0].sender(), Bytes(STABLE_NAME), Int(0)),
-        App.localPut(Txn.sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
+        App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
         SucceedSeq,
     )  # always allow user to opt in
 
-    on_close_out = FailWithMsg(
-        "Only user with 0 escrow can close out (not losing $ART$)."
-    )
+    on_close_out = FailWithMsg("Only allow 0 $ART$ user, or lose $ART$.")
 
     on_update_app = Return(
         And(
@@ -247,7 +248,11 @@ def approval_program():
             And(
                 Global.group_size() == Int(2),
                 Gtxn[0].application_args[0] == Bytes("mint"),
-                Gtxn[1].receiver() == Global.creator_address(),
+                Or(
+                    Gtxn[1].receiver() == Global.creator_address(),
+                    Gtxn[1].receiver()
+                    == Global.zero_address(),  # TODO:ask: why it will change to 0addr automatically?
+                ),
                 Gtxn[0].sender() != Gtxn[1].sender(),
             ),
             Seq(
@@ -267,17 +272,17 @@ def approval_program():
         ],
         [
             Int(1),
-            FailWithMsg("no correct args"),
+            FailWithMsg("wrong args"),
         ],
     )
 
     program = Cond(
+        [Gtxn[0].application_id() == Int(0), on_creation],
         [Gtxn[0].on_completion() == OnComplete.NoOp, on_call],
         [Gtxn[0].on_completion() == OnComplete.CloseOut, on_close_out],
         [Gtxn[0].on_completion() == OnComplete.UpdateApplication, on_update_app],
         [Gtxn[0].on_completion() == OnComplete.DeleteApplication, on_deleteapp],
         [Gtxn[0].on_completion() == OnComplete.OptIn, on_opt_in],
-        [Gtxn[0].application_id() == Int(0), on_creation],
         # checked picture https://github.com/algorand/docs/blob/92d2bb3929d2301e1d3acfd164b0621593fcac5b/docs/imgs/sccalltypes.png
     )
     # Mode.Application specifies that this is a smart contract

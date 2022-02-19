@@ -48,7 +48,8 @@ Reason of moving: faster.
 - `getLocalState` doesn't need `str:` prefix. Only `appArgs` need.
 - In `types.AssetTransferParam.assetID`, "passing asa name is also supported".
 - In `types.AssetTransferParam.amount`, "use bigint for large transfer amount".
-- In `algob` trasaction receipt `receipt.txn.snd.buffer seems to be the same as receipt.txn.arcv!.buffer`
+- In `algob` transaction receipt `receipt.txn.snd.buffer seems to be the same as receipt.txn.arcv!.buffer`
+- Code style: LION added an `[ERR]` prefix in the SC error message. Don't search it.
 
 ### Test PyTeal with Python (discarded by algo-builder-tester)
 
