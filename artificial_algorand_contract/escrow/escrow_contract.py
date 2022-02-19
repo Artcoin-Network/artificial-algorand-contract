@@ -250,10 +250,10 @@ def approval_program():
                 Gtxn[0].application_args[0] == Bytes("mint"),
                 Or(
                     Gtxn[1].receiver() == Global.creator_address(),
-                    Gtxn[1].receiver()
-                    == Global.zero_address(),  # TODO:ask: why it will change to 0addr automatically?
+                    Gtxn[1].receiver() == Global.zero_address(),
+                    # TODO:ask: why changed to 0addr automatically?
                 ),
-                Gtxn[0].sender() != Gtxn[1].sender(),
+                Gtxn[0].sender() == Gtxn[1].sender(),
             ),
             Seq(
                 on_mint,
