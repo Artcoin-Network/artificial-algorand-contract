@@ -30,6 +30,8 @@ Currently all `client` are using the same algod client initialized by last line 
 - `pure_stake` (testnet of PureStake)
 - `sandbox` (Algorand sandbox)
 
+## Algo-builder
+
 ### Test PyTeal with algo-builder-tester
 
 Reason of moving: faster.
@@ -38,6 +40,12 @@ Reason of moving: faster.
 2. Copy files (should change output dir)
 3. Run algo-builder-tester `cd ./algo-builder-tester && yarn test`
 4. New: Just `yarn` after `cd ./algo-builder-tester` can also do the job (1s slower). I used some yarn trick.
+
+### Algo-builder Note
+
+#### To note and Confluence
+
+- `getLocalState` doesn't need `str:` prefix. Only `appArgs` need.
 
 ### Test PyTeal with Python (discarded by algo-builder-tester)
 
@@ -49,6 +57,7 @@ Reason of moving: faster.
 5. Hints:
    - To use the preset test accounts, just past "admin", "alice", "bob" as the account arg.
    - To NOT open the indexer AlgoExplore in browser, add a `settings` arg when instancing the `TealTester` (see code in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py) `TealTester.__init__`,`TealTesterSetting`).
+   - The `parsing.stringToBytes` in `@algo-builder/web` can do the string->Uint8Array conversion. We can use `str:` or `int:` for `appArgs` but it's better to use the `parsing`.to avoid the confusion.
 
 ### Algorand Tools
 

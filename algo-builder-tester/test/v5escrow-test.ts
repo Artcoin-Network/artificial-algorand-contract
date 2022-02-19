@@ -1,10 +1,13 @@
 import { AccountStore, Runtime } from '@algo-builder/runtime';
+import { parsing, types } from '@algo-builder/web';
 
 import { LogicSigAccount } from "algosdk";
 import { assert } from 'chai';
-import { types } from '@algo-builder/web';
 
-//  TODO: make sure that these are the same as in the contract. should load from env file.
+const decoder = new TextDecoder("utf-8");
+const u8a2Str = (u8a: Uint8Array) => decoder.decode(u8a);
+// TODO:chore: Wrap u8a2Str(alice.getLocalState(appID, "last_msg") as Uint8Array) to a function.
+// TODO: make sure that these are the same as in the contract. should load from env file.
 const ASSET_NAME = "$ART$"
 const STABLE_NAME = "aUSD"
 const ASSET_SUM = "+$ART$"
@@ -62,9 +65,9 @@ describe("ART-aUSD mint/redeem smart contract", function () {
 
     syncAccounts();
     const _addresses = {
-      admin: admin.address,
-      alice: alice.address,
-      billy: billy.address
+      admin_addr: admin.address,
+      alice_addr: alice.address,
+      billy_addr: billy.address
     }
     console.log('addresses used in this test : ', _addresses);
 
@@ -128,7 +131,7 @@ describe("ART-aUSD mint/redeem smart contract", function () {
     })
   })
 
-  describe("mint smart contract", function () {
+  describe.only("mint smart contract", function () {
     it("test initial global states", function () {
       syncAccounts();
       const sumEscrowed = admin.getGlobalState(appID, ASSET_SUM);
@@ -142,33 +145,42 @@ describe("ART-aUSD mint/redeem smart contract", function () {
       assert.equal(initCRN, 5n << 32n);
     });
 
+    it("assert alice opted in", function () {
+      syncAccounts();
+      const last_msg: Uint8Array = alice.getLocalState(appID, "last_msg") as Uint8Array;
+      assert.equal(u8a2Str(last_msg), "OptIn OK.");
+    });
+
     it.skip("escrow 100 art to mint 20 aUSD", function () {
       const { adminAssets } = createAssets()
       syncAccounts();
       assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
+      console.log('last_msg :', u8a2Str(alice.getLocalState(appID, "last_msg") as Uint8Array)); // DEV_LOG_TO_REMOVE
 
-      const txParams: types.AppCallsParam = {
+      const mintCallParams: types.AppCallsParam = {
         type: types.TransactionType.CallApp,
         sign: types.SignType.SecretKey,
         fromAccount: alice.account,
         appID: appID,
         payFlags: { totalFee: fee },
-        appArgs: ['str:escrow', 'int:100']
+        appArgs: ['str:mint']
       };
 
-      const escrowTxParams: types.AssetTransferParam = {
+      const mintPayTxParams: types.AssetTransferParam = {
         type: types.TransactionType.TransferAsset,
         sign: types.SignType.SecretKey,
-        fromAccount: admin.account,
+        fromAccount: alice.account,
         assetID: artID,
         payFlags: { totalFee: fee },
         toAccountAddr: admin.address,
-        amount: 1000,
+        amount: 100,
       }
 
 
 
-      runtime.executeTx([txParams, escrowTxParams]);
+      runtime.executeTx([mintCallParams, mintPayTxParams]);
+      console.log('last_msg : ', (alice.getLocalState(appID, "str:last_msg"))); // DEV_LOG_TO_REMOVE
+
       const globalCounter = runtime.getGlobalState(appID, ASSET_SUM);
       assert.equal(globalCounter, 1n);
     });

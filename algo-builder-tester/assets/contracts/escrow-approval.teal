@@ -1,196 +1,216 @@
 #pragma version 5
-txn ApplicationID
+gtxn 0 ApplicationID
 int 0
 ==
 bnz main_l18
-txn OnCompletion
+gtxn 0 OnCompletion
 int OptIn
 ==
 bnz main_l17
-txn OnCompletion
+gtxn 0 OnCompletion
+int NoOp
+==
+bnz main_l10
+gtxn 0 OnCompletion
 int CloseOut
 ==
-bnz main_l16
-txn OnCompletion
+bnz main_l9
+gtxn 0 OnCompletion
 int UpdateApplication
 ==
-bnz main_l15
-txn OnCompletion
+bnz main_l8
+gtxn 0 OnCompletion
 int DeleteApplication
-==
-bnz main_l14
-txn OnCompletion
-int NoOp
 ==
 bnz main_l7
 err
 main_l7:
-global GroupSize
-int 1
+global CreatorAddress
+gtxn 0 Sender
 ==
-txna ApplicationArgs 0
-byte "escrow"
+gtxna 0 ApplicationArgs 0
+gtxna 0 ApplicationArgs 1
+gtxna 0 ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l8:
+global CreatorAddress
+gtxn 0 Sender
+==
+gtxna 0 ApplicationArgs 0
+gtxna 0 ApplicationArgs 1
+gtxna 0 ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l9:
+gtxn 0 Sender
+byte "last_msg"
+byte "Only user with 0 escrow can close out (not losing $ART$)."
+app_local_put
+int 1
+return
+main_l10:
+global GroupSize
+int 2
+==
+gtxna 0 ApplicationArgs 0
+byte "mint"
 ==
 &&
-bnz main_l13
-global GroupSize
-int 1
-==
-txna ApplicationArgs 0
-byte "redeem"
+gtxn 1 Receiver
+global CreatorAddress
 ==
 &&
-txn Sender
+gtxn 0 Sender
+gtxn 1 Sender
+!=
+&&
+bnz main_l16
+global GroupSize
+int 2
+==
+gtxna 0 ApplicationArgs 0
+byte "burn"
+==
+&&
+gtxn 1 Sender
 byte "aUSD"
 app_local_get
-txn AssetAmount
+gtxn 1 AssetAmount
 >=
 &&
-bnz main_l12
+bnz main_l15
 int 1
-bnz main_l11
+bnz main_l14
 err
-main_l11:
-int 0
-return
-main_l12:
-byte "+$ART$"
-app_global_get
-store 0
-byte "+aUSD"
-app_global_get
-store 1
-byte "CRN"
-app_global_get
-store 2
-txn AssetAmount
-load 2
-*
-int 32
-shr
-store 4
-itxn_begin
-byte "issuance of aUSD on TXN_ID: (Txn TxID)"
-itxn_field Note
-int 9
-itxn_field XferAsset
-load 4
-itxn_field AssetAmount
-txn Sender
-itxn_field AssetReceiver
-global CreatorAddress
-itxn_field Sender
-global CreatorAddress
-itxn_field AssetCloseTo
-itxn_submit
-txn Sender
-byte "$ART$"
-txn Sender
-byte "$ART$"
-app_local_get
-txn AssetAmount
--
+main_l14:
+gtxn 0 Sender
+byte "last_msg"
+byte "no correct args"
 app_local_put
-txn Sender
-byte "aUSD"
-txn Sender
-byte "aUSD"
-app_local_get
-load 4
--
-app_local_put
-byte "+$ART$"
-load 0
-txn AssetAmount
--
-app_global_put
-byte "+aUSD"
-load 1
-load 4
--
-app_global_put
 int 1
 return
-main_l13:
-byte "+$ART$"
-app_global_get
-store 0
-byte "+aUSD"
-app_global_get
-store 1
+main_l15:
+gtxn 1 AssetAmount
 byte "CRN"
 app_global_get
-store 2
-txn AssetAmount
-load 2
+*
+int 10
 /
 int 32
 shr
-store 3
+store 1
+itxn_begin
+byte "issuance of aUSD on TXN_ID: (Gtxn 1 TxID)"
+itxn_field Note
+int 9
+itxn_field XferAsset
+load 1
+itxn_field AssetAmount
+gtxn 1 Sender
+itxn_field AssetReceiver
+global CreatorAddress
+itxn_field Sender
+global CreatorAddress
+itxn_field AssetCloseTo
+itxn_submit
+gtxn 1 Sender
+byte "$ART$"
+gtxn 1 Sender
+byte "$ART$"
+app_local_get
+gtxn 1 AssetAmount
+-
+app_local_put
+gtxn 1 Sender
+byte "aUSD"
+gtxn 1 Sender
+byte "aUSD"
+app_local_get
+load 1
+-
+app_local_put
+byte "+$ART$"
+byte "+$ART$"
+app_global_get
+gtxn 1 AssetAmount
+-
+app_global_put
+byte "+aUSD"
+byte "+aUSD"
+app_global_get
+load 1
+-
+app_global_put
+int 1
+return
+main_l16:
+gtxn 1 AssetAmount
+int 10
+*
+byte "CRN"
+app_global_get
+/
+int 32
+shr
+store 0
 itxn_begin
 int 10
 itxn_field XferAsset
-load 3
+load 0
 itxn_field AssetAmount
 global CreatorAddress
 itxn_field Sender
-txn Sender
+gtxn 1 Sender
 itxn_field AssetReceiver
 global CreatorAddress
 itxn_field AssetCloseTo
 itxn_submit
-txn Sender
+gtxn 1 Sender
 byte "$ART$"
-txn Sender
+gtxn 1 Sender
 byte "$ART$"
 app_local_get
-txn AssetAmount
+gtxn 1 AssetAmount
 +
 app_local_put
-txn Sender
+gtxn 1 Sender
 byte "aUSD"
-txn Sender
+gtxn 1 Sender
 byte "aUSD"
 app_local_get
-load 3
+load 0
 +
 app_local_put
 byte "+$ART$"
-load 0
-txn AssetAmount
+byte "+$ART$"
+app_global_get
+gtxn 1 AssetAmount
 +
 app_global_put
 byte "+aUSD"
-load 1
-load 3
+byte "+aUSD"
+app_global_get
+load 0
 +
 app_global_put
 int 1
 return
-main_l14:
-global CreatorAddress
-txn Sender
-==
-txna ApplicationArgs 0
-txna ApplicationArgs 1
-txna ApplicationArgs 2
-ed25519verify
-&&
-return
-main_l15:
-global CreatorAddress
-txn Sender
-==
-txna ApplicationArgs 0
-txna ApplicationArgs 1
-txna ApplicationArgs 2
-ed25519verify
-&&
-return
-main_l16:
-int 0
-return
 main_l17:
+gtxn 0 Sender
+byte "$ART$"
+int 0
+app_local_put
+gtxn 0 Sender
+byte "aUSD"
+int 0
+app_local_put
+txn Sender
+byte "last_msg"
+byte "OptIn OK."
+app_local_put
 int 1
 return
 main_l18:

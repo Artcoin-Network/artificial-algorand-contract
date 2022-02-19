@@ -1,6 +1,9 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
 # TODO: make sure that ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
 # TODO: Fail message when user doesn't have enough minted ART. (in burn>mint case)
+# TODO:feat: dry run, check how many can user burn.
+# use: two txn in gtxn should have same sender.
+
 from pyteal import (
     Add,
     And,
@@ -31,17 +34,16 @@ from pyteal import (
 from ..classes.algorand import TealCmdList, TealPackage, TealParam
 from ..resources import (
     ASSET_NAME,
-    STABLE_NAME,
+    STABLE_NAME,  # ASSET_ID,; STABLE_ID,
     SUM_ASSET,
     SUM_STABLE,
-    # ASSET_ID,
-    # STABLE_ID,
 )
 
 """ SETTING """
 # this is for algob testing. to use on testnet, use imports
 ASSET_ID = 9
 STABLE_ID = 10
+ART_PRICE = 10
 
 CRDD = 32  # CRDB is the number of byte digits in the CRD
 CRD = Int(
@@ -51,12 +53,12 @@ CRD = Int(
 """ Smart contract typing """
 cmd_list: TealCmdList = [
     ["mint"],  # send $ART$ to mint
-    ["redeem"],  # redeem $ART$ from escrow
+    ["burn"],  # burn $ART$ from escrow
 ]
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
 local_bytes_scheme = [
-    "history"
-]  # not needed at redeem: no more data for more data, maybe more "blocks"?
+    "last_msg"
+]  # not needed at burn: no more data for more data, maybe more "blocks"?
 global_ints_scheme = {
     SUM_ASSET: f"sum of {ASSET_NAME} collateral, with unit of decimal.",
     SUM_STABLE: f"sum of {STABLE_NAME} issued, with unit of decimal.",
@@ -80,7 +82,17 @@ teal_param: TealParam = {
 
 def approval_program():
     SucceedSeq = Seq(Return(Int(1)))
-    FailSeq = Seq(Return(Int(0)))
+
+    def FailWithMsg(msg: str):  # TODO:ref: use byte_msg
+        # TODO:feat: add timestamp to last_msg
+        # didn't change local_bytes_scheme, nor updated teal_param
+        return Seq(
+            App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes(msg + "")),
+            # If(
+            #     Bytes(msg) == Bytes(""),
+            # ),
+            Return(Int(1)),
+        )
 
     scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used once in mint
     scratch_returning = ScratchVar(TealType.uint64)  # $ART$, only used once in burn
@@ -89,7 +101,10 @@ def approval_program():
     on_mint = Seq(
         scratch_issuing.store(
             ShiftRight(
-                Div(Gtxn[1].asset_amount(), App.globalGet(Bytes("CRN"))), Int(CRDD)
+                Div(
+                    Gtxn[1].asset_amount() * Int(ART_PRICE), App.globalGet(Bytes("CRN"))
+                ),
+                Int(CRDD),
             )
         ),
         # Issue aUSD to user with an InnerTxn
@@ -97,7 +112,7 @@ def approval_program():
         InnerTxnBuilder.SetFields(
             {
                 # TODO:bug: :down: this line has some problem
-                # TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
+                # TxnField.note: Bytes(f"issuance of aUSD for TXN_ID: {Gtxn[1].tx_id()}"),
                 TxnField.xfer_asset: Int(STABLE_ID),
                 TxnField.asset_amount: scratch_issuing.load(),
                 TxnField.sender: Global.creator_address(),
@@ -109,7 +124,10 @@ def approval_program():
         App.localPut(
             Gtxn[1].sender(),
             Bytes(ASSET_NAME),
-            Add(App.localGet(Txn.sender(), Bytes(ASSET_NAME)), Txn.asset_amount()),
+            Add(
+                App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
+                Gtxn[1].asset_amount(),
+            ),
         ),
         App.localPut(
             Gtxn[1].sender(),
@@ -131,12 +149,14 @@ def approval_program():
     )
 
     on_burn = Seq(
-        # user redeem $ART$ from aUSD, assuming user has enough escrowed $ART$
+        # user burn aUSD to get $ART$ back,
+        # TODO:feat: check if user has enough escrowed $ART$
         [
             # TODO:fix: check asset == $ART$, not any random asset
             scratch_returning.store(
                 ShiftRight(
-                    Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN"))),
+                    Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN")))
+                    / Int(ART_PRICE),
                     Int(CRDD),
                 )
             ),
@@ -160,15 +180,15 @@ def approval_program():
                 Gtxn[1].sender(),
                 Bytes(ASSET_NAME),
                 Minus(
-                    App.localGet(Txn.sender(), Bytes(ASSET_NAME)),
-                    Txn.asset_amount(),
+                    App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
+                    Gtxn[1].asset_amount(),
                 ),
             ),
             App.localPut(
                 Gtxn[1].sender(),
                 Bytes(STABLE_NAME),
                 Minus(
-                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
+                    App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
                     scratch_returning.load(),
                 ),
             ),
@@ -198,11 +218,16 @@ def approval_program():
         SucceedSeq,
     )  # global_ints_scheme
 
-    on_opt_in = SucceedSeq  # always allow user to opt in
+    on_opt_in = Seq(
+        App.localPut(Gtxn[0].sender(), Bytes(ASSET_NAME), Int(0)),
+        App.localPut(Gtxn[0].sender(), Bytes(STABLE_NAME), Int(0)),
+        App.localPut(Txn.sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
+        SucceedSeq,
+    )  # always allow user to opt in
 
-    on_close_out = Return(
-        Int(0)  # not allow anyone to close out escrow for now, for todo
-    )  # TODO: check user's escrow. Only user with 0 escrow can close out (not losing $ART$).
+    on_close_out = FailWithMsg(
+        "Only user with 0 escrow can close out (not losing $ART$)."
+    )
 
     on_update_app = Return(
         And(
@@ -220,14 +245,18 @@ def approval_program():
     on_call = Cond(
         [
             And(
-                Global.group_size() == Int(1),
+                Global.group_size() == Int(2),
                 Gtxn[0].application_args[0] == Bytes("mint"),
+                Gtxn[1].receiver() == Global.creator_address(),
+                Gtxn[0].sender() != Gtxn[1].sender(),
             ),
-            on_mint,
+            Seq(
+                on_mint,
+            ),
         ],
         [
             And(
-                Global.group_size() == Int(1),
+                Global.group_size() == Int(2),
                 Gtxn[0].application_args[0] == Bytes("burn"),
                 App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME))
                 >= Gtxn[1].asset_amount(),
@@ -238,18 +267,17 @@ def approval_program():
         ],
         [
             Int(1),
-            Return(Int(0)),  # Fail if no correct args.
+            FailWithMsg("no correct args"),
         ],
     )
 
     program = Cond(
-        [Gtxn[0].sender() != Gtxn[1].sender(), FailSeq],
         [Gtxn[0].on_completion() == OnComplete.NoOp, on_call],
         [Gtxn[0].on_completion() == OnComplete.CloseOut, on_close_out],
-        [Gtxn[0].on_completion() == OnComplete.OptIn, on_opt_in],
         [Gtxn[0].on_completion() == OnComplete.UpdateApplication, on_update_app],
-        [Gtxn[0].application_id() == Int(0), on_creation],
         [Gtxn[0].on_completion() == OnComplete.DeleteApplication, on_deleteapp],
+        [Gtxn[0].on_completion() == OnComplete.OptIn, on_opt_in],
+        [Gtxn[0].application_id() == Int(0), on_creation],
         # checked picture https://github.com/algorand/docs/blob/92d2bb3929d2301e1d3acfd164b0621593fcac5b/docs/imgs/sccalltypes.png
     )
     # Mode.Application specifies that this is a smart contract
