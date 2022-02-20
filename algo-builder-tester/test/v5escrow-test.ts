@@ -262,7 +262,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
     });
     it("burn 200 aUSD to redeem 200/10*5 (#aUSD/$ART$price*CR) == 100 $ART$", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const aUsdBurned = 200n; // can be 100 (bigint is not a must)
+      const aUsdBurned = 200n;
       const artRedeemed = aUsdBurned / 10n * 5n;
 
       const burnCallParams: typesW.AppCallsParam = {
@@ -309,6 +309,75 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       assert.equal(999999998000n, admin.assets.get(artID)!['amount']!);
       assert.equal(0n, alice.getLocalState(appID, ASSET_NAME)); // staked 0 $ART$ Unit
       assert.equal(0n, alice.getLocalState(appID, STABLE_NAME)); // minted 0 aUSD Unit
+    });
+    it("burn>minted would fail", function () {
+      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
+      const artPaid = 100n;
+      const aUsdCollected = artPaid * 10n / 5n;
+      const aUsdBurned = 200n + 1n; // burn 1 unit (1e-6) more aUSD than minted
+      const artRedeemed = aUsdBurned / 10n * 5n;
+
+      const mintCallParams: typesW.AppCallsParam = {
+        type: typesW.TransactionType.CallApp,
+        sign: typesW.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ['str:mint'],
+        // accounts: [admin.address], // :+1L: not working with this method, throwing error
+        // foreignAssets: [artID, usdID], // unsupported type for itxn_submit at line 211, for version 5
+      }; // TODO:ref: store a basic call params
+      const mintPayTxParams: typesW.AssetTransferParam = {
+        type: typesW.TransactionType.TransferAsset,
+        sign: typesW.SignType.SecretKey,
+        assetID: artID,
+        amount: artPaid,
+        fromAccount: alice.account,
+        toAccountAddr: admin.address,
+        payFlags: { totalFee: fee },
+      }; // TODO:ref: store a basic transfer params
+      const mintCollectTxParams: typesW.AssetTransferParam = {
+        type: typesW.TransactionType.TransferAsset,
+        sign: typesW.SignType.SecretKey,
+        assetID: usdID,
+        amount: aUsdCollected,
+        fromAccount: admin.account,
+        toAccountAddr: alice.address,
+        payFlags: { totalFee: fee },
+      }; // TODO:ref: store a basic transfer params
+      const burnCallParams: typesW.AppCallsParam = {
+        type: typesW.TransactionType.CallApp,
+        sign: typesW.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ['str:burn'],
+      }; // TODO:ref: store a basic call params
+      const burnPayTxParams: typesW.AssetTransferParam = {
+        type: typesW.TransactionType.TransferAsset,
+        sign: typesW.SignType.SecretKey,
+        assetID: usdID,
+        amount: aUsdBurned,
+        fromAccount: alice.account,
+        toAccountAddr: admin.address,
+        payFlags: { totalFee: fee },
+      }; // TODO:ref: store a basic transfer params
+      const burnCollectTxParams: typesW.AssetTransferParam = {
+        type: typesW.TransactionType.TransferAsset,
+        sign: typesW.SignType.SecretKey,
+        assetID: artID,
+        amount: artRedeemed,
+        fromAccount: admin.account,
+        toAccountAddr: alice.address,
+        payFlags: { totalFee: fee },
+      }; // TODO:ref: store a basic transfer params
+
+      /* Check status before txn */
+
+      const mintReceipt = runtime.executeTx([mintCallParams, mintPayTxParams, mintCollectTxParams]);
+      assert.throws(() => {
+        const burnReceipt = runtime.executeTx([burnCallParams, burnPayTxParams, burnCollectTxParams]);
+      }, "RUNTIME_ERR1007: Teal code rejected by logic")
     });
   });
 });
