@@ -9,6 +9,7 @@ from pyteal import (
     Add,
     And,
     App,
+    Assert,
     Bytes,
     Cond,
     Div,
@@ -26,6 +27,7 @@ from pyteal import (
     Return,
     ScratchVar,
     Seq,
+    ShiftLeft,
     ShiftRight,
     TealType,
     TxnField,
@@ -103,28 +105,31 @@ def approval_program():
 
     """ User mint $ART$ to get aUSD """
     on_mint = Seq(
+        Assert(
+            And(
+                Global.group_size() == Int(3),
+                Gtxn[1].asset_receiver() == Global.creator_address(),
+                # Or(
+                #     Gtxn[1].asset_receiver() == Global.zero_address(),
+                #     # TODO:ask: why changed to 0addr automatically?
+                # ),
+                Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
+                Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
+            ),
+        ),
         scratch_issuing.store(
-            ShiftRight(
-                Div(
-                    Gtxn[1].asset_amount() * Int(ART_PRICE), App.globalGet(Bytes("CRN"))
+            Div(
+                ShiftLeft(
+                    Gtxn[1].asset_amount() * Int(ART_PRICE),
+                    Int(CRDD),
                 ),
-                Int(CRDD),
+                App.globalGet(Bytes("CRN")),
             )
         ),
-        # Issue aUSD to user with an InnerTxn
-        InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
-        InnerTxnBuilder.SetFields(
-            {
-                # TODO:bug: :down: this line has some problem
-                # TxnField.note: Bytes(f"issuance of aUSD for TXN_ID: {Gtxn[1].tx_id()}"),
-                TxnField.xfer_asset: Int(STABLE_ID),
-                TxnField.asset_amount: scratch_issuing.load(),
-                TxnField.sender: Global.creator_address(),
-                TxnField.asset_receiver: Gtxn[1].sender(),
-                TxnField.asset_close_to: Global.creator_address(),
-            }
+        Assert(
+            scratch_issuing.load()
+            == Gtxn[2].asset_amount(),  # TODO:ask: price affected by network delay?
         ),
-        InnerTxnBuilder.Submit(),  # Run TXN, Issue aUSD to user
         App.localPut(
             Gtxn[1].sender(),
             Bytes(ASSET_NAME),
@@ -247,18 +252,9 @@ def approval_program():
     on_call = Cond(
         [
             And(
-                Global.group_size() == Int(2),
                 Gtxn[0].application_args[0] == Bytes("mint"),
-                Or(
-                    Gtxn[1].receiver() == Global.creator_address(),
-                    Gtxn[1].receiver() == Global.zero_address(),
-                    # TODO:ask: why changed to 0addr automatically?
-                ),
-                Gtxn[0].sender() == Gtxn[1].sender(),
             ),
-            Seq(
-                on_mint,
-            ),
+            on_mint,
         ],
         [
             And(

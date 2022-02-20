@@ -66,37 +66,21 @@ byte ""
 bnz main_l13
 gtxn 0 Sender
 byte "last_msg"
-byte "ERR:Only allow 0 $ART$ user, or lose $ART$."
+byte "[ERR]Only allow 0 $ART$ user, or lose $ART$."
 app_local_put
 main_l12:
-int 1
+int 0
 return
 main_l13:
 gtxn 0 Sender
 byte "last_msg"
-byte "ERR:EMPTY_ERR_MSG"
+byte "[ERR]:EMPTY_ERR_MSG"
 app_local_put
 b main_l12
 main_l14:
-global GroupSize
-int 2
-==
 gtxna 0 ApplicationArgs 0
 byte "mint"
 ==
-&&
-gtxn 1 Receiver
-global CreatorAddress
-==
-gtxn 1 Receiver
-global ZeroAddress
-==
-||
-&&
-gtxn 0 Sender
-gtxn 1 Sender
-!=
-&&
 bnz main_l23
 global GroupSize
 int 2
@@ -122,15 +106,15 @@ byte ""
 bnz main_l21
 gtxn 0 Sender
 byte "last_msg"
-byte "ERR:wrong args"
+byte "[ERR]wrong args"
 app_local_put
 main_l20:
-int 1
+int 0
 return
 main_l21:
 gtxn 0 Sender
 byte "last_msg"
-byte "ERR:EMPTY_ERR_MSG"
+byte "[ERR]:EMPTY_ERR_MSG"
 app_local_put
 b main_l20
 main_l22:
@@ -188,27 +172,35 @@ app_global_put
 int 1
 return
 main_l23:
+global GroupSize
+int 3
+==
+gtxn 1 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 Sender
+gtxn 1 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+assert
 gtxn 1 AssetAmount
 int 10
 *
+int 32
+shl
 byte "CRN"
 app_global_get
 /
-int 32
-shr
 store 0
-itxn_begin
-int 10
-itxn_field XferAsset
 load 0
-itxn_field AssetAmount
-global CreatorAddress
-itxn_field Sender
-gtxn 1 Sender
-itxn_field AssetReceiver
-global CreatorAddress
-itxn_field AssetCloseTo
-itxn_submit
+gtxn 2 AssetAmount
+==
+assert
 gtxn 1 Sender
 byte "$ART$"
 gtxn 1 Sender

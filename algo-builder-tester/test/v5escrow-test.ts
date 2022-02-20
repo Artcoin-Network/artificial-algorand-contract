@@ -210,46 +210,65 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
 
-    it.only("escrow 100 art to mint 20 aUSD", function () {
+    it.only("escrow 100 $ART$ to mint 100*10/5 (num*price/CR)== 200 aUSD", function () {
+      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
+      const artPaid = 100n; // can be 100 (bigint is not a must)
+      // CR unit is 2^-16. 5n next line means 5>>16 * UnitCR.
+      const aUsdCollected = artPaid * 10n / 5n; // (num*price/CR)
+
       // const adminAssets = admin.createdAssets;
       // assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
       syncAccounts();
-
       const mintCallParams: typesW.AppCallsParam = {
         type: typesW.TransactionType.CallApp,
         sign: typesW.SignType.SecretKey,
         fromAccount: alice.account,
         appID: appID,
         payFlags: { totalFee: fee },
-        appArgs: ['str:mint']
+        appArgs: ['str:mint'],
+        // accounts: [admin.address], // :+1L: not working with this method, throwing error
+        // foreignAssets: [artID, usdID], // unsupported type for itxn_submit at line 211, for version 5
       };
-
       const mintPayTxParams: typesW.AssetTransferParam = {
         type: typesW.TransactionType.TransferAsset,
         sign: typesW.SignType.SecretKey,
         assetID: artID,
-        amount: 100,
+        amount: artPaid,
         fromAccount: alice.account,
         toAccountAddr: admin.address,
         payFlags: { totalFee: fee },
       }
-
+      const mintCollectTxParams: typesW.AssetTransferParam = {
+        type: typesW.TransactionType.TransferAsset,
+        sign: typesW.SignType.SecretKey,
+        assetID: usdID,
+        amount: aUsdCollected,
+        fromAccount: admin.account,
+        toAccountAddr: alice.address,
+        payFlags: { totalFee: fee },
+      }
+      /* Check status before txn */
       syncAccounts();
-      assert.equal(1000n, alice.assets.get(artID)!['amount']!);
-      assert.equal(999999998000n, admin.assets.get(artID)!['amount']!);
-      const receipt = runtime.executeTx([mintCallParams, mintPayTxParams]);
-      console.log('receipt : ', receipt); // DEV_LOG_TO_REMOVE
+      assert.equal(1000n, alice.assets.get(artID)!['amount']!); // 1k from dispense
+      assert.equal(999999998000n, admin.assets.get(artID)!['amount']!); // 2k dispensed
+      assert.equal(0n, alice.getLocalState(appID, ASSET_NAME)); // staked 0 $ART$ Unit
+      assert.equal(0n, alice.getLocalState(appID, STABLE_NAME)); // minted 0 aUSD Unit
+
+      const receipt = runtime.executeTx([mintCallParams, mintPayTxParams, mintCollectTxParams],);
+      // console.log('receipt : ', receipt);
+
+      /* Check status after txn */
       syncAccounts();
       assert.equal(900n, alice.assets.get(artID)!['amount']!);
       assert.equal(999999998100n, admin.assets.get(artID)!['amount']!);
+      assert.equal(100n, alice.getLocalState(appID, ASSET_NAME)); // staked 100 $ART$ Unit
+      assert.equal(200n, alice.getLocalState(appID, STABLE_NAME)); // minted 0 aUSD Unit
 
       syncAccounts();
       const last_msg = u8a2Str(alice.getLocalState(appID, "last_msg") as Uint8Array)
       console.log('last_msg :', last_msg); // DEV_LOG_TO_REMOVE
       const aliceAsset = alice.getLocalState(appID, ASSET_NAME);
       console.log('aliceAsset : ', aliceAsset); // DEV_LOG_TO_REMOVE
-
-
     });
   });
 
