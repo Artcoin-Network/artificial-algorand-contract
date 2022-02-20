@@ -2,6 +2,7 @@
 # TODO: make sure that ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
 # TODO: Fail message when user doesn't have enough minted ART. (in burn>mint case)
 # TODO:feat: dry run, check how many can user burn.
+# TODO:ref: make a sub-program for making transfer.
 # use: two txn in gtxn should have same sender.
 
 from pyteal import (
