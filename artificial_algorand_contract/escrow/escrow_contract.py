@@ -17,20 +17,16 @@ from pyteal import (
     Global,
     Gtxn,
     If,
-    InnerTxnBuilder,
     Int,
     Minus,
     Mode,
     Mul,
     OnComplete,
-    Or,
     Return,
     ScratchVar,
     Seq,
     ShiftLeft,
-    ShiftRight,
     TealType,
-    TxnField,
     compileTeal,
 )
 
@@ -47,6 +43,7 @@ from ..resources import (
 ASSET_ID = 9
 STABLE_ID = 10
 ART_PRICE = 10
+DEFAULT_CR = 5  # 500%
 
 CRDD = 32  # CRDB is the number of byte digits in the CRD
 CRD = Int(
@@ -109,12 +106,11 @@ def approval_program():
             And(
                 Global.group_size() == Int(3),
                 Gtxn[1].asset_receiver() == Global.creator_address(),
-                # Or(
-                #     Gtxn[1].asset_receiver() == Global.zero_address(),
-                #     # TODO:ask: why changed to 0addr automatically?
-                # ),
+                # TODO:note: it's not changed to 0addr. Use `asset_receiver`, not `receiver`.
                 Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
                 Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
+                Gtxn[1].xfer_asset() == Int(ASSET_ID),
+                Gtxn[2].xfer_asset() == Int(STABLE_ID),
             ),
         ),
         scratch_issuing.store(
@@ -128,7 +124,7 @@ def approval_program():
         ),
         Assert(
             scratch_issuing.load()
-            == Gtxn[2].asset_amount(),  # TODO:ask: price affected by network delay?
+            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
             Gtxn[1].sender(),
@@ -159,71 +155,62 @@ def approval_program():
 
     on_burn = Seq(
         # user burn aUSD to get $ART$ back,
-        # TODO:feat: check if user has enough escrowed $ART$
-        [
-            # TODO:fix: check asset == $ART$, not any random asset
-            scratch_returning.store(
-                ShiftRight(
-                    Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN")))
-                    / Int(ART_PRICE),
-                    Int(CRDD),
-                )
+        # TODO:feat: checked user has enough escrowed $ART$ in [on_call]
+        Assert(
+            And(
+                Global.group_size() == Int(3),
+                Gtxn[1].asset_receiver() == Global.creator_address(),
+                Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
+                Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
+                Gtxn[1].xfer_asset() == Int(STABLE_ID),
+                Gtxn[2].xfer_asset() == Int(ASSET_ID),
             ),
-            # Issue aUSD to user
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    # TODO:bug: :down: this line has some problem
-                    TxnField.note: Bytes(
-                        f"issuance of aUSD on TXN_ID: {Gtxn[1].tx_id()}"
-                    ),
-                    TxnField.xfer_asset: Int(ASSET_ID),
-                    TxnField.asset_amount: scratch_returning.load(),
-                    TxnField.asset_receiver: Gtxn[1].sender(),
-                    TxnField.sender: Global.creator_address(),
-                    TxnField.asset_close_to: Global.creator_address(),
-                }
+        ),
+        scratch_returning.store(
+            Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN")))
+            / ShiftLeft(Int(ART_PRICE), Int(CRDD))
+        ),
+        Assert(
+            scratch_returning.load()  # TODO:ref: not needed, can use Gtxn[2].asset_amount()
+            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(ASSET_NAME),
+            Minus(
+                App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
+                Gtxn[2].asset_amount(),
             ),
-            InnerTxnBuilder.Submit(),  # Issue aUSD to user
-            App.localPut(
-                Gtxn[1].sender(),
-                Bytes(ASSET_NAME),
-                Minus(
-                    App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
-                    Gtxn[1].asset_amount(),
-                ),
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(STABLE_NAME),
+            Minus(
+                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
+                Gtxn[1].asset_amount(),
             ),
-            App.localPut(
-                Gtxn[1].sender(),
-                Bytes(STABLE_NAME),
-                Minus(
-                    App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
-                    scratch_returning.load(),
-                ),
+        ),
+        App.globalPut(
+            Bytes(SUM_ASSET),
+            Minus(
+                App.globalGet(Bytes(SUM_ASSET)),
+                Gtxn[2].asset_amount(),
             ),
-            App.globalPut(
-                Bytes(SUM_ASSET),
-                Minus(
-                    App.globalGet(Bytes(SUM_ASSET)),
-                    (Gtxn[1].asset_amount()),
-                ),
+        ),
+        App.globalPut(
+            Bytes(SUM_STABLE),
+            Minus(
+                App.globalGet(Bytes(SUM_STABLE)),
+                Gtxn[1].asset_amount(),
             ),
-            App.globalPut(
-                Bytes(SUM_STABLE),
-                Minus(
-                    App.globalGet(Bytes(SUM_STABLE)),
-                    scratch_returning.load(),
-                ),
-            ),
-            SucceedSeq,
-        ]
+        ),
+        SucceedSeq,
     )
     on_creation = Seq(
         App.globalPut(Bytes(SUM_ASSET), Int(0)),
         App.globalPut(Bytes(SUM_STABLE), Int(0)),
-        App.globalPut(
-            Bytes("CRN"), Int(5 << CRDD)
-        ),  # == 5* 2**CRDD, assuming 1$ART$=1aUSD, minting 5$ART$ to get 1aUSD.
+        App.globalPut(Bytes("CRN"), Int(DEFAULT_CR << CRDD)),
+        # == DEFAULT_CR*(2**CRDD), value of $ART$ minted / value of aUSD issued == DEFAULT_CR.
         SucceedSeq,
     )  # global_ints_scheme
 
@@ -258,10 +245,10 @@ def approval_program():
         ],
         [
             And(
-                Global.group_size() == Int(2),
                 Gtxn[0].application_args[0] == Bytes("burn"),
-                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME))
+                App.localGet(Gtxn[1].asset_sender(), Bytes(STABLE_NAME))
                 >= Gtxn[1].asset_amount(),
+                # TODO:discuss: move to on_burn? needed? (TEAL has integer underflow)
                 # correct logic depend on ACID (atomicity, consistency, isolation, durability).
                 # cannot be used to cheat (will not parallel) for ACID.
             ),

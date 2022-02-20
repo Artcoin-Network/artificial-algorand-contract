@@ -82,14 +82,10 @@ gtxna 0 ApplicationArgs 0
 byte "mint"
 ==
 bnz main_l23
-global GroupSize
-int 2
-==
 gtxna 0 ApplicationArgs 0
 byte "burn"
 ==
-&&
-gtxn 1 Sender
+gtxn 1 AssetSender
 byte "aUSD"
 app_local_get
 gtxn 1 AssetAmount
@@ -118,35 +114,49 @@ byte "[ERR]:EMPTY_ERR_MSG"
 app_local_put
 b main_l20
 main_l22:
+global GroupSize
+int 3
+==
+gtxn 1 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 Sender
+gtxn 1 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+gtxn 1 XferAsset
+int 10
+==
+&&
+gtxn 2 XferAsset
+int 9
+==
+&&
+assert
 gtxn 1 AssetAmount
 byte "CRN"
 app_global_get
 *
 int 10
-/
 int 32
-shr
+shl
+/
 store 1
-itxn_begin
-byte "issuance of aUSD on TXN_ID: (Gtxn 1 TxID)"
-itxn_field Note
-int 9
-itxn_field XferAsset
 load 1
-itxn_field AssetAmount
-gtxn 1 Sender
-itxn_field AssetReceiver
-global CreatorAddress
-itxn_field Sender
-global CreatorAddress
-itxn_field AssetCloseTo
-itxn_submit
+gtxn 2 AssetAmount
+==
+assert
 gtxn 1 Sender
 byte "$ART$"
 gtxn 1 Sender
 byte "$ART$"
 app_local_get
-gtxn 1 AssetAmount
+gtxn 2 AssetAmount
 -
 app_local_put
 gtxn 1 Sender
@@ -154,19 +164,19 @@ byte "aUSD"
 gtxn 1 Sender
 byte "aUSD"
 app_local_get
-load 1
+gtxn 1 AssetAmount
 -
 app_local_put
 byte "+$ART$"
 byte "+$ART$"
 app_global_get
-gtxn 1 AssetAmount
+gtxn 2 AssetAmount
 -
 app_global_put
 byte "+aUSD"
 byte "+aUSD"
 app_global_get
-load 1
+gtxn 1 AssetAmount
 -
 app_global_put
 int 1
@@ -185,6 +195,14 @@ gtxn 1 Sender
 &&
 gtxn 1 Sender
 gtxn 2 AssetReceiver
+==
+&&
+gtxn 1 XferAsset
+int 9
+==
+&&
+gtxn 2 XferAsset
+int 10
 ==
 &&
 assert
