@@ -1,23 +1,28 @@
 <mxfile host="65bd71144e">
     <diagram id="StccxLKIsm0_ziz8Wz44" name="Page-1">
-        <mxGraphModel dx="1210" dy="508" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="1008" dy="673" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="3" value="Gourp Txn" style="swimlane;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="40" width="400" height="120" as="geometry"/>
+                    <mxGeometry x="40" y="40" width="600" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="2" value="gtxn0: Call App&lt;br&gt;gtxn0 arg X = callX" style="rounded=0;whiteSpace=wrap;html=1;" parent="3" vertex="1">
                     <mxGeometry x="40" y="40" width="120" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="gtxn1: Transaction" style="rounded=0;whiteSpace=wrap;html=1;" parent="3" vertex="1">
+                <mxCell id="4" value="gtxn1:&lt;br&gt;Collect $ART$" style="rounded=0;whiteSpace=wrap;html=1;" parent="3" vertex="1">
                     <mxGeometry x="240" y="40" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="90" value="gtxn2:&lt;br&gt;Pay aUSD" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="3">
+                    <mxGeometry x="440" y="40" width="120" height="40" as="geometry"/>
                 </mxCell>
                 <mxCell id="11" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="7" target="10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="88" style="edgeStyle=none;html=1;" edge="1" parent="1" source="7" target="87">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="88" style="edgeStyle=none;html=1;" parent="1" source="7" target="92" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="280" y="240" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="7" value="call0==&quot;str:mint&quot;" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="80" y="200" width="120" height="80" as="geometry"/>
@@ -38,7 +43,7 @@
                 <mxCell id="10" value="call0==&quot;str:burn&quot;" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="80" y="520" width="120" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="19" value="Run on_mint" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="1" vertex="1">
+                <mxCell id="19" value="Returun Fail" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="1" vertex="1">
                     <mxGeometry x="280" y="360" width="120" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="30" style="edgeStyle=none;html=1;" parent="1" source="26" target="_F05gWV_H_FlJvX53TOn-44" edge="1">
@@ -100,46 +105,92 @@
                     <mxGeometry x="10" y="30" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="58" value="CR is always 500%, price always 10" style="swimlane;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="480" width="360" height="460" as="geometry"/>
+                    <mxGeometry x="440" y="480" width="400" height="480" as="geometry"/>
                 </mxCell>
-                <mxCell id="68" style="edgeStyle=none;html=1;" edge="1" parent="1" source="59" target="62">
+                <mxCell id="68" style="edgeStyle=none;html=1;" parent="1" source="59" target="62" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="59" value="on_mint" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
-                    <mxGeometry x="480" y="40" width="120" height="80" as="geometry"/>
+                <mxCell id="59" value="on_mint" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="40" width="120" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="71" style="edgeStyle=none;html=1;" edge="1" parent="1" source="62" target="69">
+                <mxCell id="72" style="edgeStyle=none;html=1;" parent="1" source="62" target="64" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="72" style="edgeStyle=none;html=1;" edge="1" parent="1" source="62" target="64">
+                <mxCell id="102" style="edgeStyle=none;html=1;" edge="1" parent="1" source="62" target="101">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="62" value="&lt;span&gt;gtxn1.asset==$ART&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="62" value="&lt;span&gt;gtxn1.asset==$ART&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="200" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="64" value="Returun Fail" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="360" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="85" value="Update&lt;br&gt;Global&amp;amp;Local&lt;br&gt;State" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="1480" y="200" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="89" style="edgeStyle=none;html=1;" parent="1" source="92" target="19" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="340" y="280" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="94" style="edgeStyle=none;html=1;" edge="1" parent="1" source="92" target="93">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="92" value="&lt;span&gt;gtxn1 receiver ==&lt;/span&gt;&lt;br&gt;&lt;span&gt;ADMIN&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="200" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="97" style="edgeStyle=none;html=1;" edge="1" parent="1" source="93" target="96">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="99" style="edgeStyle=none;html=1;" edge="1" parent="1" source="93" target="98">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="93" value="gtxn1 receiver==&lt;br&gt;gtxn2 sender" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
                     <mxGeometry x="480" y="200" width="120" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="64" value="Returun Fail" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
-                    <mxGeometry x="480" y="360" width="120" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="86" style="edgeStyle=none;html=1;" edge="1" parent="1" source="67" target="85">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="67" value="Send IA aUSD with InnerTxn" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
-                    <mxGeometry x="680" y="200" width="120" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="70" style="edgeStyle=none;html=1;" edge="1" parent="1" source="69" target="67">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="69" value="Calc: IA =&lt;br&gt;Issuing Aount" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="95" value="Returun Fail&lt;br&gt;&lt;br&gt;This func writes &quot;last_msg&quot;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
                     <mxGeometry x="680" y="40" width="120" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="85" value="Update&lt;br&gt;Global&amp;amp;Local&lt;br&gt;State" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="680" y="360" width="120" height="80" as="geometry"/>
+                <mxCell id="96" value="Returun Fail" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="360" width="120" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="89" style="edgeStyle=none;html=1;" edge="1" parent="1" source="87" target="19">
+                <mxCell id="112" style="edgeStyle=none;html=1;" edge="1" parent="1" source="98" target="59">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="87" value="gtxn1 receiver ==&lt;br&gt;ADMIN" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="280" y="200" width="120" height="80" as="geometry"/>
+                <mxCell id="98" value="on_mint" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
+                    <mxGeometry x="680" y="200" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="105" style="edgeStyle=none;html=1;" edge="1" parent="1" source="101" target="104">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="107" style="edgeStyle=none;html=1;" edge="1" parent="1" source="101" target="106">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="101" value="&lt;span&gt;gtxn2.asset==aUSD&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1080" y="200" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="104" value="Returun Fail" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
+                    <mxGeometry x="1080" y="360" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="109" style="edgeStyle=none;html=1;" edge="1" parent="1" source="106" target="85">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1480" y="240" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="111" style="edgeStyle=none;html=1;" edge="1" parent="1" source="106" target="110">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="106" value="&lt;span&gt;gtxn1 $ART$&amp;nbsp;&lt;/span&gt;&lt;br&gt;&lt;span&gt;*price/CR ==&amp;nbsp;&lt;/span&gt;&lt;br&gt;&lt;span&gt;gtxn2 aUSD&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1280" y="200" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="110" value="Returun Fail" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="1">
+                    <mxGeometry x="1280" y="360" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="113" style="edgeStyle=none;html=1;" edge="1" parent="1" source="4" target="92">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="114" style="edgeStyle=none;html=1;" edge="1" parent="1" source="90" target="93">
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
