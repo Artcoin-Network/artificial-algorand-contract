@@ -38,3 +38,4 @@ share/python-wheels/
 *.egg
 MANIFEST
 algo-builder-tester/algob-tester.teal
+.DS_Store

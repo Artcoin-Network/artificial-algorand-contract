@@ -146,7 +146,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
   }
 
   describe("related ASA", function () {
-    it("asset creation and dispense", function () {
+    it("Asset creation and dispense", function () {
       const adminAssets = admin.createdAssets;
       syncAccounts();
       assert.isTrue(adminAssets.has(artID) && adminAssets.has(usdID));
@@ -156,7 +156,6 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       // from admin was $ART$ dispensed
       assert.equal(999999998000n, admin.assets.get(artID)!['amount']!);
     })
-
     it("Asset transfer", function () {
       syncAccounts();
       assert.equal(1000n, alice.assets.get(artID)!['amount']!);
@@ -181,6 +180,27 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       syncAccounts();
       assert.equal(900n, alice.assets.get(artID)!['amount']!);
       assert.equal(1100n, billy.assets.get(artID)!['amount']!);
+    })
+    it.only("Asset cannot change blank addr(changeable if not-blank)", function () {
+      syncAccounts();
+      const assetModParams: typesW.AssetModFields = {
+        manager: admin.address,
+        reserve: admin.address,
+      }
+      assert.throws(
+        () => {
+          admin.modifyAsset(artID, assetModParams);
+          const artInfo = runtime.getApp(artID);
+          console.log('artInfo : ', artInfo); // DEV_LOG_TO_REMOVE
+        }, "RUNTIME_ERR1507: Cannot reset a blank address"
+      )
+
+    })
+    it.skip("SKIP destroy asset: block others", function () {
+      syncAccounts();
+      admin.destroyAsset(artID);
+      assert.throws(() => { const artInfo = runtime.getAssetDef(artID); },
+        "Error: RUNTIME_ERR1508: All of the created assets should be in creator's account")
     })
 
   })
