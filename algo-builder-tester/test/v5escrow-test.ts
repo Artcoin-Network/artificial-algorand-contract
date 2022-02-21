@@ -170,8 +170,9 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
         payFlags: { totalFee: fee },
       }
       const receipt = runtime.executeTx(artPayTxParams) as typesRT.TxReceipt;
-      console.log('receipt : ', receipt); // DEV_LOG_TO_REMOVE
-      console.log('receipt.txn.snd : ', receipt.txn.snd); // DEV_LOG_TO_REMOVE
+      // console.log('receipt : ', receipt); // DEV_LOG, for refactor
+      // console.log('receipt.txn.snd : ', receipt.txn.snd); // DEV_LOG, for refactor
+      // TODO:ref: compare buffer/uint8array https://www.chaijs.com/plugins/chai-bytes/, 
       assert.equal(buf2Hex(receipt.txn.snd), u8a2Hex(parsing.addressToPk(alice.address)))
       assert.equal(buf2Hex(receipt.txn.arcv!), u8a2Hex(parsing.addressToPk(billy.address)))
       // assert.equal(ab2Hex(receipt.txn.snd.buffer.slice(0, 32)), buf2Hex(receipt.txn.arcv!)) // Why??
