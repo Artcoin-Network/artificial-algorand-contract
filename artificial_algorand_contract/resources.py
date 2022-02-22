@@ -8,3 +8,6 @@ ASSET_NAME = "$ART$"
 SUM_ASSET = f"+{ASSET_NAME}"
 STABLE_NAME = "aUSD"
 SUM_STABLE = f"+{STABLE_NAME}"
+
+if __name__ == "__main__":
+    print(f"SUM_ASSET: {SUM_ASSET}")

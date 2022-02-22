@@ -3,7 +3,7 @@ const { types } = require('@algo-builder/web');
 const { assert } = require('chai');
 
 
-describe.only("Algorand Smart Contracts - Stateful Counter example", function () {
+describe("Algorand Smart Contracts - Stateful Counter example", function () {
   //   useFixture("stateful");
   const fee = 1000;
   const minBalance = BigInt(1e6);
@@ -31,8 +31,8 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
 
   this.beforeAll(function () {
     runtime = new Runtime([john]); // setup test
-    approvalProgramFileName = 'approval.teal'; // doesn't support `folder/approval`(will parse as full name).
-    clearProgramFileName = 'clear.teal'; // have to rename file. So I changed Py Exporter/TealPackage class.
+    approvalProgramFileName = 'counter-approval.teal'; // doesn't support `folder/approval`(will parse as full name).
+    clearProgramFileName = 'counter-clear.teal'; // have to rename file. So I changed Py Exporter/TealPackage class.
 
     // deploy a new app
     txParams.appID = runtime.deployApp(
@@ -54,7 +54,6 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
   });
 
   const key = "Count";
-  // describe('inner describe', function () {
 
   it("should initialize local counter to 0 after opt-in", function () {
     const globalCounter = runtime.getAccount(john.address).getGlobalState(txParams.appID, key); // get local value from john account
@@ -66,7 +65,8 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
 
 
   it("should set global counter to 1 after first call", function () {
-    txParams.appArgs = [new Uint8Array(Buffer.from('Add'))] // not in docs, algo-builder-tester/node_modules/@algo-builder/web/build/types.d.ts
+    txParams.appArgs = [new Uint8Array(Buffer.from('Add'))] // not in docs, algo-builder-tester/node_modules/@algo-builder/web/build/types.d.ts 
+    // :up: not needed to edit here. can write it in first assignment. with ["str:Add"] 
     runtime.executeTx(txParams);
     // runtime.getAccount(john.address).createdApps.forEach((app: any) => { console.log(app); }); // DEV_LOG_TO_REMOVE
     const globalCounter = runtime.getGlobalState(txParams.appID, key);
@@ -92,5 +92,4 @@ describe.only("Algorand Smart Contracts - Stateful Counter example", function ()
     assert.equal(newGlobalCounter, globalCounter + 1n);
     // assert.equal(newLocalCounter, localCounter + 1n);
   });
-  // });
 });

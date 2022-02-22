@@ -19,6 +19,7 @@
 
 After preparing the all the steps above in the [Install Chapter](#install), you may want to switch algod-client, test PyTeal code, etc.
 
+- None secret settings are in `artificial_algorand_contract/__init__.py` #TODO:refactor
 - Don't forget to `poetry shell` or `source ./.venv/bin/activate`.
 - Since this is a python package, testing would be "run with module", `python3 -m artificial_algorand_contract`. In this mode, only the [main](./artificial_algorand_contract/__main__.py) file is executed, as an entrance point. With VSCode, it's easier to do `[run]`-`[start debugging]`.
 
@@ -29,6 +30,8 @@ Currently all `client` are using the same algod client initialized by last line 
 - `pure_stake` (testnet of PureStake)
 - `sandbox` (Algorand sandbox)
 
+## Algo-builder
+
 ### Test PyTeal with algo-builder-tester
 
 Reason of moving: faster.
@@ -38,6 +41,16 @@ Reason of moving: faster.
 3. Run algo-builder-tester `cd ./algo-builder-tester && yarn test`
 4. New: Just `yarn` after `cd ./algo-builder-tester` can also do the job (1s slower). I used some yarn trick.
 
+### Algo-builder Note
+
+#### To note and Confluence
+
+- `getLocalState` doesn't need `str:` prefix. Only `appArgs` need.
+- In `types.AssetTransferParam.assetID`, "passing asa name is also supported".
+- In `types.AssetTransferParam.amount`, "use bigint for large transfer amount".
+- In `algob` transaction receipt `receipt.txn.snd.buffer seems to be the same as receipt.txn.arcv!.buffer`
+- Code style: LION added an `[ERR]` prefix in the SC error message. Don't search it.
+
 ### Test PyTeal with Python (discarded by algo-builder-tester)
 
 1. Write some PyTeal file, and bundle them to a class `TealPackage`, defined in [algorand.py](./artificial_algorand_contract/classes/algorand.py). E.g. `counter_package = TealPackage(approval_program(), clear_program(), teal_param, cmd_list)`
@@ -46,8 +59,9 @@ Reason of moving: faster.
 3. Call the methods of `TealTester`. The auto-complete function will help you pass the args. E.g. `counter_full_test()` in [tests.py](./artificial_algorand_contract/tests.py)
 4. All tests in the (3.) step should written in [tests.py](./artificial_algorand_contract/tests.py), then imported to the [main](./artificial_algorand_contract/__main__.py) file to be executed. Codes in [main](./artificial_algorand_contract/__main__.py) will not persist. It's not in `.gitignore` only for the convenience.
 5. Hints:
-   - To use the preset test accounts, just past "master", "alice", "bob" as the account arg.
+   - To use the preset test accounts, just past "admin", "alice", "bob" as the account arg.
    - To NOT open the indexer AlgoExplore in browser, add a `settings` arg when instancing the `TealTester` (see code in [teal_tester.py](./artificial_algorand_contract/classes/teal_tester.py) `TealTester.__init__`,`TealTesterSetting`).
+   - The `parsing.stringToBytes` in `@algo-builder/web` can do the string->Uint8Array conversion. We can use `str:` or `int:` for `appArgs` but it's better to use the `parsing`.to avoid the confusion.
 
 ### Algorand Tools
 

@@ -1,16 +1,22 @@
 """ PyTeal to escrow asset and get stable coin aUSD. """
-# TODO: makesure ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
+# TODO: make sure that ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
+# TODO: Fail message when user doesn't have enough minted ART. (in burn>mint case)
+# TODO:feat: dry run, check how many can user burn.
+# TODO:ref: make a sub-program for making transfer.
+# use: two txn in gtxn should have same sender.
+
 from pyteal import (
     Add,
     And,
     App,
+    Assert,
     Bytes,
     Cond,
     Div,
     Ed25519Verify,
     Global,
+    Gtxn,
     If,
-    InnerTxnBuilder,
     Int,
     Minus,
     Mode,
@@ -21,32 +27,51 @@ from pyteal import (
     Seq,
     ShiftLeft,
     TealType,
-    Txn,
-    TxnField,
     compileTeal,
 )
 
 from ..classes.algorand import TealCmdList, TealPackage, TealParam
 from ..resources import (
-    ASSET_ID,
     ASSET_NAME,
-    STABLE_ID,
-    STABLE_NAME,
+    STABLE_NAME,  # ASSET_ID,; STABLE_ID,
     SUM_ASSET,
     SUM_STABLE,
 )
 
+""" SETTING """
+# this is for algob testing. to use on testnet, use imports
+ASSET_ID = 9
+STABLE_ID = 10
+ART_PRICE = 10
+DEFAULT_CR = 5  # 500%
+
+CRDD = 32  # CRDB is the number of byte digits in the CRD
+CRD = Int(
+    1 << CRDD
+)  # collateralisation ratio denominator, reciprocal of precision of CR.
+
+""" Smart contract typing """
+cmd_list: TealCmdList = [
+    ["mint"],  # send $ART$ to mint
+    ["burn"],  # burn $ART$ from escrow
+]
 local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
-local_bytes_scheme = ["history"]  # TODO: for more data, maybe more "blocks"?
+local_bytes_scheme = [
+    "last_msg"
+]  # not needed at burn: no more data for more data, maybe more "blocks"?
 global_ints_scheme = {
     SUM_ASSET: f"sum of {ASSET_NAME} collateral, with unit of decimal.",
     SUM_STABLE: f"sum of {STABLE_NAME} issued, with unit of decimal.",
-    "CRN": "collateralisation ratio = numerator / 2^32, \
-        in range [0,2^32] with precision of 2^-32",
+    "CRN": "collateralisation ratio = numerator / 2^CRDD, \
+        in range [0,2^CRDD] with precision of 2^-CRDD (too fine precision).",
     # collateralisation ratio numerator
+    # TODO:discuss: precision 2^-16 should be enough, we don't need that much.
+    # TODO:+: Decimal is clearer. 2^-16 ~== 0.0015%. the floating range is much larger.
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
 
+
+""" Dynamic Param from typing data """
 teal_param: TealParam = {
     "local_ints": len(local_ints_scheme),
     "local_bytes": len(local_bytes_scheme),
@@ -54,185 +79,194 @@ teal_param: TealParam = {
     "global_bytes": len(global_bytes_scheme),
 }
 
-cmd_list: TealCmdList = [
-    ["escrow"],  # send $ART$ to escrow
-    ["redeem"],  # redeem $ART$ from escrow
-]
-
 
 def approval_program():
-    handle_creation = Seq(
-        [
-            App.globalPut(Bytes(SUM_ASSET), Int(0)),
-            App.globalPut(Bytes(SUM_STABLE), Int(0)),
-            App.globalPut(
-                Bytes("CRN"), Int(5 << 32)
-            ),  # == 5* 2**32, assuming 1$ART$=1aUSD, minting 5$ART$ to get 1aUSD.
-            Return(Int(1)),
-        ]
+    SucceedSeq = Seq(Return(Int(1)))
+
+    def FailWithMsg(msg: str):  # TODO:ref: use byte_msg
+        # TODO:feat: add timestamp to last_msg
+        # didn't change local_bytes_scheme, nor updated teal_param
+        return Seq(
+            If(
+                Bytes(msg) == Bytes(""),
+                App.localPut(
+                    Gtxn[0].sender(), Bytes("last_msg"), Bytes("[ERR]:EMPTY_ERR_MSG")
+                ),
+                App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes("[ERR]" + msg)),
+            ),
+            Return(Int(0)),
+        )
+
+    scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used once in mint
+    scratch_returning = ScratchVar(TealType.uint64)  # $ART$, only used once in burn
+
+    """ User mint $ART$ to get aUSD """
+    on_mint = Seq(
+        Assert(
+            And(
+                Global.group_size() == Int(3),
+                Gtxn[1].asset_receiver() == Global.creator_address(),
+                # TODO:note: it's not changed to 0addr. Use `asset_receiver`, not `receiver`.
+                Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
+                Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
+                Gtxn[1].xfer_asset() == Int(ASSET_ID),
+                Gtxn[2].xfer_asset() == Int(STABLE_ID),
+            ),
+        ),
+        scratch_issuing.store(
+            Div(
+                ShiftLeft(
+                    Gtxn[1].asset_amount() * Int(ART_PRICE),
+                    Int(CRDD),
+                ),
+                App.globalGet(Bytes("CRN")),
+            )
+        ),
+        Assert(
+            scratch_issuing.load()
+            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(ASSET_NAME),
+            Add(
+                App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
+                Gtxn[1].asset_amount(),
+            ),
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(STABLE_NAME),
+            Add(
+                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
+                scratch_issuing.load(),
+            ),
+        ),
+        App.globalPut(
+            Bytes(SUM_ASSET),
+            Add(App.globalGet(Bytes(SUM_ASSET)), (Gtxn[1].asset_amount())),
+        ),
+        App.globalPut(
+            Bytes(SUM_STABLE),
+            Add(App.globalGet(Bytes(SUM_STABLE)), scratch_issuing.load()),
+        ),
+        SucceedSeq,
+    )
+
+    on_burn = Seq(
+        # user burn aUSD to get $ART$ back,
+        # TODO:feat: checked user has enough escrowed $ART$ in [on_call]
+        Assert(
+            And(
+                Global.group_size() == Int(3),
+                Gtxn[1].asset_receiver() == Global.creator_address(),
+                Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
+                Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
+                Gtxn[1].xfer_asset() == Int(STABLE_ID),
+                Gtxn[2].xfer_asset() == Int(ASSET_ID),
+            ),
+        ),
+        scratch_returning.store(
+            Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN")))
+            / ShiftLeft(Int(ART_PRICE), Int(CRDD))
+        ),
+        Assert(
+            scratch_returning.load()  # TODO:ref: not needed, can use Gtxn[2].asset_amount()
+            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(ASSET_NAME),
+            Minus(
+                App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
+                Gtxn[2].asset_amount(),
+            ),
+        ),
+        App.localPut(
+            Gtxn[1].sender(),
+            Bytes(STABLE_NAME),
+            Minus(
+                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
+                Gtxn[1].asset_amount(),
+            ),
+        ),
+        App.globalPut(
+            Bytes(SUM_ASSET),
+            Minus(
+                App.globalGet(Bytes(SUM_ASSET)),
+                Gtxn[2].asset_amount(),
+            ),
+        ),
+        App.globalPut(
+            Bytes(SUM_STABLE),
+            Minus(
+                App.globalGet(Bytes(SUM_STABLE)),
+                Gtxn[1].asset_amount(),
+            ),
+        ),
+        SucceedSeq,
+    )
+    on_creation = Seq(
+        App.globalPut(Bytes(SUM_ASSET), Int(0)),
+        App.globalPut(Bytes(SUM_STABLE), Int(0)),
+        App.globalPut(Bytes("CRN"), Int(DEFAULT_CR << CRDD)),
+        # == DEFAULT_CR*(2**CRDD), value of $ART$ minted / value of aUSD issued == DEFAULT_CR.
+        SucceedSeq,
     )  # global_ints_scheme
 
-    handle_opt_in = Return(Int(1))  # always allow user to opt in
+    on_opt_in = Seq(
+        App.localPut(Gtxn[0].sender(), Bytes(ASSET_NAME), Int(0)),
+        App.localPut(Gtxn[0].sender(), Bytes(STABLE_NAME), Int(0)),
+        App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
+        SucceedSeq,
+    )  # always allow user to opt in
 
-    handle_close_out = Return(
-        Int(1)
-    )  # TODO: check user's escrow. Only 0 escrow user can close out.
+    on_close_out = FailWithMsg("Only allow 0 $ART$ user, or lose $ART$.")
 
-    handle_update_app = Return(
+    on_update_app = Return(
         And(
-            Global.creator_address() == Txn.sender(),
+            Global.creator_address() == Gtxn[0].sender(),  # TODO: manager
             Ed25519Verify(
-                data=Txn.application_args[0],
-                sig=Txn.application_args[1],
-                key=Txn.application_args[2],
-            ),  # TODO: discuss: security, should use a password? high cost is ok.
+                data=Gtxn[0].application_args[0],
+                sig=Gtxn[0].application_args[1],
+                key=Gtxn[0].application_args[2],
+            ),  # security, should use a password, high cost is ok.
         )
     )
 
-    handle_deleteapp = handle_update_app  # Same security level as update_app
+    on_deleteapp = on_update_app  # Same security level as update_app
 
-    scratch_sum_asset = ScratchVar(TealType.uint64)  # used in both escrow and redeem
-    scratch_sum_stable = ScratchVar(TealType.uint64)  # used in both escrow and redeem
-    scratch_CRN = ScratchVar(TealType.uint64)  # used in both escrow and redeem
-    scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used in escrow
-    scratch_returning = ScratchVar(TealType.uint64)  # $ART$, only used in redeem
-    escrow = Seq(
-        # User escrow $ART$ to get aUSD
-        [
-            scratch_sum_asset.store(App.globalGet(Bytes(SUM_ASSET))),  # TODO:why store?
-            scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
-            scratch_CRN.store(App.globalGet(Bytes("CRN"))),
-            scratch_issuing.store(
-                Div(
-                    Txn.asset_amount(), ShiftLeft(scratch_CRN.load(), Int(32))
-                )  # TODO: accuracy?
-            ),  # Remember that all needs Int()!
-            # Issue aUSD to user
-            InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                    TxnField.xfer_asset: Int(STABLE_ID),  # TODO: not sure
-                    TxnField.asset_amount: scratch_issuing.load(),
-                    TxnField.sender: Global.creator_address(),
-                    TxnField.asset_receiver: Txn.sender(),
-                    TxnField.asset_close_to: Global.creator_address(),
-                }
-            ),
-            InnerTxnBuilder.Submit(),  # Issue aUSD to user
-            App.localPut(
-                Txn.sender(),
-                Bytes(ASSET_NAME),
-                Add(App.localGet(Txn.sender(), Bytes(ASSET_NAME)), Txn.asset_amount()),
-            ),
-            App.localPut(
-                Txn.sender(),
-                Bytes(STABLE_NAME),
-                Add(
-                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
-                    scratch_issuing.load(),
-                ),
-            ),
-            App.globalPut(
-                Bytes(SUM_ASSET),
-                Add(scratch_sum_asset.load(), (Txn.asset_amount())),
-            ),
-            App.globalPut(
-                Bytes(SUM_STABLE),
-                Add(scratch_sum_stable.load(), scratch_issuing.load()),
-            ),
-            Return(Int(1)),
-        ]
-    )
-
-    redeem = Seq(
-        # user redeem $ART$ from aUSD, assuming user has enough escrowed $ART$
-        [
-            scratch_sum_asset.store(App.globalGet(Bytes(SUM_ASSET))),  # TODO:why store?
-            scratch_sum_stable.store(App.globalGet(Bytes(SUM_STABLE))),
-            scratch_CRN.store(App.globalGet(Bytes("CRN"))),
-            scratch_returning.store(
-                Mul(
-                    (Txn.asset_amount()), ShiftLeft(scratch_CRN.load(), Int(32))
-                )  # TODO: accuracy?
-            ),
-            # Issue aUSD to user
-            InnerTxnBuilder.Begin(),  # TODO: not sure if this is correct
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.note: Bytes(f"issuance of aUSD on TXN_ID: {Txn.tx_id()}"),
-                    TxnField.xfer_asset: Int(ASSET_ID),  # TODO: not sure
-                    TxnField.asset_amount: scratch_returning.load(),
-                    TxnField.asset_receiver: Txn.sender(),
-                    TxnField.sender: Global.creator_address(),
-                    TxnField.asset_close_to: Global.creator_address(),
-                }
-            ),
-            InnerTxnBuilder.Submit(),  # Issue aUSD to user
-            App.localPut(
-                Txn.sender(),
-                Bytes(ASSET_NAME),
-                Minus(
-                    App.localGet(Txn.sender(), Bytes(ASSET_NAME)),
-                    Txn.asset_amount(),
-                ),
-            ),
-            App.localPut(
-                Txn.sender(),
-                Bytes(STABLE_NAME),
-                Minus(
-                    App.localGet(Txn.sender(), Bytes(STABLE_NAME)),
-                    scratch_returning.load(),
-                ),
-            ),
-            App.globalPut(
-                Bytes(SUM_ASSET),
-                Minus(
-                    scratch_sum_asset.load(),
-                    (Txn.asset_amount()),
-                ),
-            ),
-            App.globalPut(
-                Bytes(SUM_STABLE),
-                Minus(
-                    scratch_sum_stable.load(),
-                    scratch_returning.load(),
-                ),
-            ),
-            Return(Int(1)),
-        ]
-    )
-
-    handle_no_op = Cond(
+    on_call = Cond(
         [
             And(
-                Global.group_size() == Int(1),
-                Txn.application_args[0] == Bytes("escrow"),
+                Gtxn[0].application_args[0] == Bytes("mint"),
             ),
-            escrow,
+            on_mint,
         ],
         [
             And(
-                Global.group_size() == Int(1),
-                Txn.application_args[0] == Bytes("redeem"),
-                App.localGet(Txn.sender(), Bytes(STABLE_NAME)) >= Txn.asset_amount(),
-                # TODO: make sure correct logic
+                Gtxn[0].application_args[0] == Bytes("burn"),
+                App.localGet(Gtxn[1].asset_sender(), Bytes(STABLE_NAME))
+                >= Gtxn[1].asset_amount(),
+                # TODO:discuss: move to on_burn? needed? (TEAL has integer underflow)
+                # correct logic depend on ACID (atomicity, consistency, isolation, durability).
+                # cannot be used to cheat (will not parallel) for ACID.
             ),
-            redeem,
+            on_burn,
         ],
         [
             Int(1),
-            Return(Int(0)),  # Fail if no correct args.
+            FailWithMsg("wrong args"),
         ],
     )
 
     program = Cond(
-        [Txn.application_id() == Int(0), handle_creation],
-        [Txn.on_completion() == OnComplete.OptIn, handle_opt_in],
-        [Txn.on_completion() == OnComplete.CloseOut, handle_close_out],
-        [Txn.on_completion() == OnComplete.UpdateApplication, handle_update_app],
-        [Txn.on_completion() == OnComplete.DeleteApplication, handle_deleteapp],
-        [Txn.on_completion() == OnComplete.NoOp, handle_no_op],
+        [Gtxn[0].application_id() == Int(0), on_creation],
+        [Gtxn[0].on_completion() == OnComplete.NoOp, on_call],
+        [Gtxn[0].on_completion() == OnComplete.CloseOut, on_close_out],
+        [Gtxn[0].on_completion() == OnComplete.UpdateApplication, on_update_app],
+        [Gtxn[0].on_completion() == OnComplete.DeleteApplication, on_deleteapp],
+        [Gtxn[0].on_completion() == OnComplete.OptIn, on_opt_in],
         # checked picture https://github.com/algorand/docs/blob/92d2bb3929d2301e1d3acfd164b0621593fcac5b/docs/imgs/sccalltypes.png
     )
     # Mode.Application specifies that this is a smart contract

@@ -1,0 +1,263 @@
+#pragma version 5
+gtxn 0 ApplicationID
+int 0
+==
+bnz main_l24
+gtxn 0 OnCompletion
+int NoOp
+==
+bnz main_l14
+gtxn 0 OnCompletion
+int CloseOut
+==
+bnz main_l10
+gtxn 0 OnCompletion
+int UpdateApplication
+==
+bnz main_l9
+gtxn 0 OnCompletion
+int DeleteApplication
+==
+bnz main_l8
+gtxn 0 OnCompletion
+int OptIn
+==
+bnz main_l7
+err
+main_l7:
+gtxn 0 Sender
+byte "$ART$"
+int 0
+app_local_put
+gtxn 0 Sender
+byte "aUSD"
+int 0
+app_local_put
+gtxn 0 Sender
+byte "last_msg"
+byte "OptIn OK."
+app_local_put
+int 1
+return
+main_l8:
+global CreatorAddress
+gtxn 0 Sender
+==
+gtxna 0 ApplicationArgs 0
+gtxna 0 ApplicationArgs 1
+gtxna 0 ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l9:
+global CreatorAddress
+gtxn 0 Sender
+==
+gtxna 0 ApplicationArgs 0
+gtxna 0 ApplicationArgs 1
+gtxna 0 ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l10:
+byte "Only allow 0 $ART$ user, or lose $ART$."
+byte ""
+==
+bnz main_l13
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]Only allow 0 $ART$ user, or lose $ART$."
+app_local_put
+main_l12:
+int 0
+return
+main_l13:
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]:EMPTY_ERR_MSG"
+app_local_put
+b main_l12
+main_l14:
+gtxna 0 ApplicationArgs 0
+byte "mint"
+==
+bnz main_l23
+gtxna 0 ApplicationArgs 0
+byte "burn"
+==
+gtxn 1 AssetSender
+byte "aUSD"
+app_local_get
+gtxn 1 AssetAmount
+>=
+&&
+bnz main_l22
+int 1
+bnz main_l18
+err
+main_l18:
+byte "wrong args"
+byte ""
+==
+bnz main_l21
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]wrong args"
+app_local_put
+main_l20:
+int 0
+return
+main_l21:
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]:EMPTY_ERR_MSG"
+app_local_put
+b main_l20
+main_l22:
+global GroupSize
+int 3
+==
+gtxn 1 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 Sender
+gtxn 1 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+gtxn 1 XferAsset
+int 10
+==
+&&
+gtxn 2 XferAsset
+int 9
+==
+&&
+assert
+gtxn 1 AssetAmount
+byte "CRN"
+app_global_get
+*
+int 10
+int 32
+shl
+/
+store 1
+load 1
+gtxn 2 AssetAmount
+==
+assert
+gtxn 1 Sender
+byte "$ART$"
+gtxn 1 Sender
+byte "$ART$"
+app_local_get
+gtxn 2 AssetAmount
+-
+app_local_put
+gtxn 1 Sender
+byte "aUSD"
+gtxn 1 Sender
+byte "aUSD"
+app_local_get
+gtxn 1 AssetAmount
+-
+app_local_put
+byte "+$ART$"
+byte "+$ART$"
+app_global_get
+gtxn 2 AssetAmount
+-
+app_global_put
+byte "+aUSD"
+byte "+aUSD"
+app_global_get
+gtxn 1 AssetAmount
+-
+app_global_put
+int 1
+return
+main_l23:
+global GroupSize
+int 3
+==
+gtxn 1 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 Sender
+gtxn 1 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+gtxn 1 XferAsset
+int 9
+==
+&&
+gtxn 2 XferAsset
+int 10
+==
+&&
+assert
+gtxn 1 AssetAmount
+int 10
+*
+int 32
+shl
+byte "CRN"
+app_global_get
+/
+store 0
+load 0
+gtxn 2 AssetAmount
+==
+assert
+gtxn 1 Sender
+byte "$ART$"
+gtxn 1 Sender
+byte "$ART$"
+app_local_get
+gtxn 1 AssetAmount
++
+app_local_put
+gtxn 1 Sender
+byte "aUSD"
+gtxn 1 Sender
+byte "aUSD"
+app_local_get
+load 0
++
+app_local_put
+byte "+$ART$"
+byte "+$ART$"
+app_global_get
+gtxn 1 AssetAmount
++
+app_global_put
+byte "+aUSD"
+byte "+aUSD"
+app_global_get
+load 0
++
+app_global_put
+int 1
+return
+main_l24:
+byte "+$ART$"
+int 0
+app_global_put
+byte "+aUSD"
+int 0
+app_global_put
+byte "CRN"
+int 21474836480
+app_global_put
+int 1
+return

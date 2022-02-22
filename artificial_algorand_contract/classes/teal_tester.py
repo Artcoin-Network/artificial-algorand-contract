@@ -48,14 +48,14 @@ class TealTester:
             open_algo_explorer(self.app_id)
 
     def _literal_to_account(
-        self, account: None | Literal["master", "alice", "bob"] | AlgoAcc
+        self, account: None | Literal["admin", "alice", "bob"] | AlgoAcc
     ):
         if account is None:
-            acc = self.accounts.master
+            acc = self.accounts.admin
         elif isinstance(account, AlgoAcc):
             acc = account
-        elif account == "master":
-            acc = self.accounts.master
+        elif account == "admin":
+            acc = self.accounts.admin
         elif account == "alice":
             acc = self.accounts.alice
         elif account == "bob":
@@ -65,7 +65,7 @@ class TealTester:
     def create(self) -> int:
         appid = create_app(
             client=self.client,
-            private_key=self.accounts.master.get_secret_key(),
+            private_key=self.accounts.admin.get_secret_key(),
             approval_program=compile_program(self.client, self.teal.approval),
             clear_program=compile_program(self.client, self.teal.clear),
             global_schema=transaction.StateSchema(
@@ -80,28 +80,28 @@ class TealTester:
 
     def opt_in(
         self,
-        account: Literal["master", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         opt_in_app(self.client, sk, self.app_id)
 
     def close_out(
         self,
-        account: Literal["master", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         close_out_app(self.client, sk, self.app_id)
 
     def clear(
         self,
-        account: Literal["master", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         clear_app(self.client, sk, self.app_id)
 
     def call(
         self,
-        account: Literal["master", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
         args: TealNoOpArgs = None,
     ):
         # app_args = [args..encode("utf-8")]
@@ -119,7 +119,7 @@ class TealTester:
         self.teal = new_teal
         update_app(
             client=self.client,
-            private_key=self.accounts.master.get_secret_key(),
+            private_key=self.accounts.admin.get_secret_key(),
             app_id=self.app_id,
             approval_program=compile_program(self.client, self.teal.approval),
             clear_program=compile_program(self.client, self.teal.clear),
@@ -128,14 +128,14 @@ class TealTester:
     def delete(self):
         delete_app(
             client=self.client,
-            private_key=self.accounts.master.get_secret_key(),
+            private_key=self.accounts.admin.get_secret_key(),
             index=self.app_id,
         )
 
-    def read_local_state(self, account: Literal["master", "alice", "bob"] | AlgoAcc):
+    def read_local_state(self, account: Literal["admin", "alice", "bob"] | AlgoAcc):
         addr = self._literal_to_account(account).addr
         read_local_state(self.client, addr, self.app_id)
 
-    def read_global_state(self, account: Literal["master", "alice", "bob"] | AlgoAcc):
+    def read_global_state(self, account: Literal["admin", "alice", "bob"] | AlgoAcc):
         addr = self._literal_to_account(account).addr
         read_global_state(self.client, addr, self.app_id)
