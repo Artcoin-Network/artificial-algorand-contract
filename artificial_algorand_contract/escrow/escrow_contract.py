@@ -39,6 +39,7 @@ from ..resources import (
 )
 
 """ SETTING """
+# TODO: ref: move settings to another file.
 # this is for algob testing. to use on testnet, use imports
 ASSET_ID = 9
 STABLE_ID = 10

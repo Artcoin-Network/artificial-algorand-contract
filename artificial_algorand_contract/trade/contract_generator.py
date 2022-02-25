@@ -12,4 +12,4 @@ def gen_trade_contract(asset_config: AssetConfig) -> str:
         str: TEAL code of the trade contract
     """
 
-    pass
+    return "FALSE"
