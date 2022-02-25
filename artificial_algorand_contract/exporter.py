@@ -34,11 +34,12 @@ class Exporter:
 
 
 def exporter_test():
-    from .counter import counter_package  # or next line
-    from .escrow import escrow_package  # or next line
+    # from .counter import counter_package  # or next line
+    # Exporter(counter_package).export()
 
-    Exporter(counter_package).export()
-    Exporter(escrow_package).export()
+    from .stake import stake_package  # or next line
+
+    Exporter(stake_package).export()
 
 
 if __name__ == "__main__":

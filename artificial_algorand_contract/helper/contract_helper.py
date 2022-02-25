@@ -1,6 +1,6 @@
 """ from https://raw.githubusercontent.com/algorand/docs/master/examples/smart_contracts/v2/python/stateful_smart_contracts.py """
 # TODO 0209: Fix local state read etc.
-# TODO 0209: Add new contract for escrow.
+# TODO 0209: Add new contract for stake.
 # TODO 0209: Dispense some asset for test accounts.
 import base64
 from typing import Literal, TypedDict, overload

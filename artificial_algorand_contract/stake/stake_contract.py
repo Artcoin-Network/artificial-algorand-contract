@@ -1,4 +1,4 @@
-""" PyTeal to escrow asset and get stable coin aUSD. """
+""" PyTeal to stake asset and get stable coin aUSD. """
 # TODO: make sure that ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
 # TODO: Fail message when user doesn't have enough minted ART. (in burn>mint case)
 # TODO:feat: dry run, check how many can user burn.
@@ -54,9 +54,9 @@ CRD = Int(
 """ Smart contract typing """
 cmd_list: TealCmdList = [
     ["mint"],  # send $ART$ to mint
-    ["burn"],  # burn $ART$ from escrow
+    ["burn"],  # burn $ART$ from stake
 ]
-local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
+local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need stake more
 local_bytes_scheme = [
     "last_msg"
 ]  # not needed at burn: no more data for more data, maybe more "blocks"?
@@ -156,7 +156,7 @@ def approval_program():
 
     on_burn = Seq(
         # user burn aUSD to get $ART$ back,
-        # TODO:feat: checked user has enough escrowed $ART$ in [on_call]
+        # TODO:feat: checked user has enough staked $ART$ in [on_call]
         Assert(
             And(
                 Global.group_size() == Int(3),
@@ -284,6 +284,6 @@ def clear_program():
 # print(approval_program())
 # print(clear_program())
 
-escrow_package = TealPackage(
-    "escrow", approval_program(), clear_program(), teal_param, cmd_list
+stake_package = TealPackage(
+    "stake", approval_program(), clear_program(), teal_param, cmd_list
 )

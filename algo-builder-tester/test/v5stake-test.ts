@@ -32,8 +32,8 @@ const STABLE_NAME = "aUSD"
 const ASSET_SUM = "+$ART$"
 const STABLE_SUM = "+aUSD"
 const runtime_config = {
-  approvalProgramFileName: "escrow-approval.teal",
-  clearProgramFileName: "escrow-clear.teal",
+  approvalProgramFileName: "stake-approval.teal",
+  clearProgramFileName: "stake-clear.teal",
 }
 
 describe.only("ART-aUSD mint/redeem smart contract", function () {
@@ -231,7 +231,7 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
       const last_msg: Uint8Array = alice.getLocalState(appID, "last_msg") as Uint8Array;
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
-    it("escrow 100 $ART$ to mint 100*10/5 (#$ART$*price/CR)== 200 aUSD", function () {
+    it("stake 100 $ART$ to mint 100*10/5 (#$ART$*price/CR)== 200 aUSD", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const artPaid = 100n; // can be 100 (bigint is not a must)
       // CR unit is 2^-16. 5n next line means 5>>16 * UnitCR.
@@ -319,10 +319,10 @@ describe.only("ART-aUSD mint/redeem smart contract", function () {
 
       syncAccounts();
       // TODO:ref:#1: should return to the initial state after each test
-      assert.equal(900n, alice.assets.get(artID)!['amount']!); // FROM LAST TEST (escrow)
-      assert.equal(999999998100n, admin.assets.get(artID)!['amount']!); // FROM LAST TEST (escrow)
-      assert.equal(100n, alice.getLocalState(appID, ASSET_NAME));  // FROM LAST TEST (escrow)
-      assert.equal(200n, alice.getLocalState(appID, STABLE_NAME)); // FROM LAST TEST (escrow)
+      assert.equal(900n, alice.assets.get(artID)!['amount']!); // FROM LAST TEST (stake)
+      assert.equal(999999998100n, admin.assets.get(artID)!['amount']!); // FROM LAST TEST (stake)
+      assert.equal(100n, alice.getLocalState(appID, ASSET_NAME));  // FROM LAST TEST (stake)
+      assert.equal(200n, alice.getLocalState(appID, STABLE_NAME)); // FROM LAST TEST (stake)
 
       const receipt = runtime.executeTx([burnCallParams, burnPayTxParams, burnCollectTxParams]);
       // console.log('receipt : ', receipt);

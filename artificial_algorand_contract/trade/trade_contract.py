@@ -119,7 +119,7 @@ def approval_program(asset_config: AssetConfig) -> str:
 
     on_sell = Seq(
         # user burn aUSD to get $ART$ back,
-        # TODO:feat: checked user has enough escrowed $ART$ in [on_call]
+        # TODO:feat: checked user has enough staked $ART$ in [on_call]
         Assert(
             And(
                 Global.group_size() == Int(3),
