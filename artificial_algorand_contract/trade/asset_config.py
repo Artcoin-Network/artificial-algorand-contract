@@ -12,6 +12,7 @@ class AssetConfig(TypedDict):
     Asset configuration, used by the contract_generator.py and ASADeploy.
     """
 
+    ASSET_name: str
     AAA_name: str
     url: str
     AAA_unit_name: str
@@ -60,11 +61,12 @@ default_global_bytes_scheme = ["price_info"]  # origin of price, implementation 
 # TODO:discuss: 1 account can have 10 smart contract.
 
 aBTC_config: AssetConfig = {
-    "AAA_name": "Bitcoin",
+    "ASSET_name": "Bitcoin",
+    "AAA_name": "aBTC",
     "url": "https://bitcoin.org",
     "AAA_id": None,
     "total": 100000000,
-    "AAA_unit_name": "BTC",
+    "AAA_unit_name": "aBTC",
     "price": 38_613.14,
     "decimals": 8,
     # "collateralizable": False,

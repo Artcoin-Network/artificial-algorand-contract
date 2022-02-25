@@ -5,6 +5,7 @@ from artificial_algorand_contract import OUTPUT_DIR
 from artificial_algorand_contract.classes.algorand import TealPackage
 
 # TODO: Add "contract-name" and add this string to filename.
+# TODO:ref: export should be part of "TealPackage"
 
 
 class Exporter:
@@ -34,12 +35,16 @@ class Exporter:
 
 
 def exporter_test():
-    # from .counter import counter_package  # or next line
+    # from .counter import counter_package
     # Exporter(counter_package).export()
 
-    from .stake import stake_package  # or next line
+    # from .stake import stake_package
+    # Exporter(stake_package).export()
 
-    Exporter(stake_package).export()
+    from .trade.contract_generator import gen_trade_contract
+    from .trade.asset_config import aBTC_config
+
+    Exporter(gen_trade_contract(aBTC_config)).export()
 
 
 if __name__ == "__main__":
