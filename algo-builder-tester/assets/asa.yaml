@@ -24,7 +24,7 @@ aUSD:
   # clawback: "WWYNX3TKQYVEREVSW6QQP3SXSFOCE3SKUSEIVJ7YAGUPEACNI5UGI4DZCE"
 
 aBTC:
-  total: 100000000
+  total: 1e+18
   decimals: 8
   defaultFrozen: false
   unitName: "aBTC"
