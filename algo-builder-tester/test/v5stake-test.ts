@@ -5,8 +5,12 @@ import { LogicSigAccount } from "algosdk";
 import { assert } from 'chai';
 
 /* GENERAL HELPER FUNCTIONS */
-const decoder = new TextDecoder("utf-8");
-const u8a2Str = (u8a: Uint8Array) => decoder.decode(u8a);
+// const decoder = new TextDecoder("utf-8");
+// const u8a2Str = (u8a: Uint8Array) => decoder.decode(u8a);
+// Uint8Array to string
+const u8a2Str = (u8a: Uint8Array) => String.fromCharCode.apply(null, Array.from(u8a));
+
+
 // Uint8Array to Hex string
 const u8a2Hex = (u8a: Uint8Array) => {
   return Array.from(u8a).map(b => b.toString(16).padStart(2, '0')).join(' ');
@@ -36,7 +40,7 @@ const runtime_config = {
   clearProgramFileName: "stake-clear.teal",
 }
 
-describe.only("ART-aUSD mint/redeem smart contract", function () {
+describe("ART-aUSD mint/redeem smart contract", function () {
   //   useFixture("stateful");
   const fee = 1000;
   const minBalance = 1e6;
