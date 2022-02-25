@@ -13,13 +13,9 @@ from pyteal import (
     Int,
     Minus,
     Mode,
-    Mul,
     OnComplete,
     Return,
-    ScratchVar,
     Seq,
-    ShiftLeft,
-    TealType,
     compileTeal,
 )
 
@@ -66,11 +62,15 @@ def approval_program(asset_config: AssetConfig) -> str:
     """
     # All asset in this contract are counted in units of its own "decimal".
     # for typing and readability
-    AAA_ID = asset_config["AAA_id"] or 0  # raise exc?
+    AAA_ID = asset_config["AAA_id"] or 0  # raise exception?
+    AAA_NAME = asset_config["AAA_name"]
+    SUM_ASSET = f"+{AAA_NAME}"
     STABLE_ID = aUSD_ID
-    ASSET_PRICE = asset_config["price"]
     PRICE_B16 = Int(int(asset_config["price"] * 2**16))
     SucceedSeq = Seq(Return(Int(1)))
+    AppCall = Gtxn[0]
+    Receiving = Gtxn[1]
+    Sending = Gtxn[2]
 
     def FailWithMsg(msg: str):  # TODO:ref: use byte_msg
         # TODO:feat: add timestamp to last_msg
@@ -79,133 +79,88 @@ def approval_program(asset_config: AssetConfig) -> str:
             If(
                 Bytes(msg) == Bytes(""),
                 App.localPut(
-                    Gtxn[0].sender(), Bytes("last_msg"), Bytes("[ERR]:EMPTY_ERR_MSG")
+                    AppCall.sender(), Bytes("last_msg"), Bytes("[ERR]:EMPTY_ERR_MSG")
                 ),
-                App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes("[ERR]" + msg)),
+                App.localPut(AppCall.sender(), Bytes("last_msg"), Bytes("[ERR]" + msg)),
             ),
             Return(Int(0)),
         )
 
-    scratch_issuing = ScratchVar(TealType.uint64)  # aUSD, only used once in mint
-    scratch_returning = ScratchVar(TealType.uint64)  # $ART$, only used once in burn
-
     """ User mint $ART$ to get aUSD """
-    on_mint = Seq(
+    on_buy = Seq(
         Assert(
             And(
                 Global.group_size() == Int(3),
-                Gtxn[1].asset_receiver() == Global.creator_address(),
-                Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
-                Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
-                Gtxn[1].xfer_asset() == Int(AAA_ID),
-                Gtxn[2].xfer_asset() == Int(STABLE_ID),
+                Receiving.asset_receiver() == Global.creator_address(),
+                AppCall.sender() == Receiving.sender(),
+                Receiving.sender() == Sending.asset_receiver(),
+                Receiving.xfer_asset() == Int(AAA_ID),
+                Sending.xfer_asset() == Int(STABLE_ID),
             ),
-        ),
-        scratch_issuing.store(
-            Div(
-                ShiftLeft(
-                    Gtxn[1].asset_amount() * PRICE_B16,
-                    Int(CRDD),
-                ),
-                App.globalGet(Bytes("CRN")),
-            )
         ),
         Assert(
-            scratch_issuing.load()
-            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+            (Receiving.asset_amount() * PRICE_B16) << Int(16) == Sending.asset_amount(),
+            # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
-            Gtxn[1].sender(),
-            Bytes(ASSET_NAME),
+            Receiving.sender(),
+            Bytes(AAA_NAME),
             Add(
-                App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
-                Gtxn[1].asset_amount(),
-            ),
-        ),
-        App.localPut(
-            Gtxn[1].sender(),
-            Bytes(STABLE_NAME),
-            Add(
-                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
-                scratch_issuing.load(),
+                App.localGet(Receiving.sender(), Bytes(AAA_NAME)),
+                Receiving.asset_amount(),
             ),
         ),
         App.globalPut(
             Bytes(SUM_ASSET),
-            Add(App.globalGet(Bytes(SUM_ASSET)), (Gtxn[1].asset_amount())),
-        ),
-        App.globalPut(
-            Bytes(SUM_STABLE),
-            Add(App.globalGet(Bytes(SUM_STABLE)), scratch_issuing.load()),
+            Add(App.globalGet(Bytes(SUM_ASSET)), (Receiving.asset_amount())),
         ),
         SucceedSeq,
     )
 
-    on_burn = Seq(
+    on_sell = Seq(
         # user burn aUSD to get $ART$ back,
         # TODO:feat: checked user has enough escrowed $ART$ in [on_call]
         Assert(
             And(
                 Global.group_size() == Int(3),
-                Gtxn[1].asset_receiver() == Global.creator_address(),
-                Gtxn[0].sender() == Gtxn[1].sender(),  # called and paid by same user
-                Gtxn[1].sender() == Gtxn[2].asset_receiver(),  #  and mint to same user
-                Gtxn[1].xfer_asset() == Int(STABLE_ID),
-                Gtxn[2].xfer_asset() == Int(AAA_ID),
+                Receiving.asset_receiver() == Global.creator_address(),
+                AppCall.sender() == Receiving.sender(),  # called and paid by same user
+                Receiving.sender()
+                == Sending.asset_receiver(),  #  and mint to same user
+                Receiving.xfer_asset() == Int(STABLE_ID),
+                Sending.xfer_asset() == Int(AAA_ID),
             ),
-        ),
-        scratch_returning.store(
-            Mul((Gtxn[1].asset_amount()), App.globalGet(Bytes("CRN")))
-            / ShiftLeft(Int(ASSET_PRICE), Int(CRDD))
         ),
         Assert(
-            scratch_returning.load()  # TODO:ref: not needed, can use Gtxn[2].asset_amount()
-            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+            (Receiving.asset_amount()) / (PRICE_B16 << 16)
+            == Sending.asset_amount(),  # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
-            Gtxn[1].sender(),
-            Bytes(ASSET_NAME),
+            Receiving.sender(),
+            Bytes(AAA_NAME),
             Minus(
-                App.localGet(Gtxn[1].sender(), Bytes(ASSET_NAME)),
-                Gtxn[2].asset_amount(),
-            ),
-        ),
-        App.localPut(
-            Gtxn[1].sender(),
-            Bytes(STABLE_NAME),
-            Minus(
-                App.localGet(Gtxn[1].sender(), Bytes(STABLE_NAME)),
-                Gtxn[1].asset_amount(),
+                App.localGet(Receiving.sender(), Bytes(AAA_NAME)),
+                Sending.asset_amount(),
             ),
         ),
         App.globalPut(
             Bytes(SUM_ASSET),
             Minus(
                 App.globalGet(Bytes(SUM_ASSET)),
-                Gtxn[2].asset_amount(),
-            ),
-        ),
-        App.globalPut(
-            Bytes(SUM_STABLE),
-            Minus(
-                App.globalGet(Bytes(SUM_STABLE)),
-                Gtxn[1].asset_amount(),
+                Sending.asset_amount(),
             ),
         ),
         SucceedSeq,
     )
     on_creation = Seq(
         App.globalPut(Bytes(SUM_ASSET), Int(0)),
-        App.globalPut(Bytes(SUM_STABLE), Int(0)),
-        App.globalPut(Bytes("CRN"), Int(DEFAULT_CR << CRDD)),
         # == DEFAULT_CR*(2**CRDD), value of $ART$ minted / value of aUSD issued == DEFAULT_CR.
         SucceedSeq,
     )  # global_ints_scheme
 
     on_opt_in = Seq(
-        App.localPut(Gtxn[0].sender(), Bytes(ASSET_NAME), Int(0)),
-        App.localPut(Gtxn[0].sender(), Bytes(STABLE_NAME), Int(0)),
-        App.localPut(Gtxn[0].sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
+        App.localPut(AppCall.sender(), Bytes(AAA_NAME), Int(0)),
+        App.localPut(AppCall.sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
         SucceedSeq,
     )  # always allow user to opt in
 
@@ -213,11 +168,11 @@ def approval_program(asset_config: AssetConfig) -> str:
 
     on_update_app = Return(
         And(
-            Global.creator_address() == Gtxn[0].sender(),  # TODO: manager
+            Global.creator_address() == AppCall.sender(),  # TODO: manager
             Ed25519Verify(
-                data=Gtxn[0].application_args[0],
-                sig=Gtxn[0].application_args[1],
-                key=Gtxn[0].application_args[2],
+                data=AppCall.application_args[0],
+                sig=AppCall.application_args[1],
+                key=AppCall.application_args[2],
             ),  # security, should use a password, high cost is ok.
         )
     )
@@ -227,20 +182,20 @@ def approval_program(asset_config: AssetConfig) -> str:
     on_call = Cond(
         [
             And(
-                Gtxn[0].application_args[0] == Bytes("mint"),
+                AppCall.application_args[0] == Bytes("buy"),
             ),
-            on_mint,
+            on_buy,
         ],
         [
             And(
-                Gtxn[0].application_args[0] == Bytes("burn"),
-                App.localGet(Gtxn[1].asset_sender(), Bytes(STABLE_NAME))
-                >= Gtxn[1].asset_amount(),
-                # TODO:discuss: move to on_burn? needed? (TEAL has integer underflow)
+                AppCall.application_args[0] == Bytes("burn"),
+                App.localGet(Receiving.asset_sender(), Bytes(AAA_NAME))
+                >= Receiving.asset_amount(),
+                # TODO:discuss: user should can sell more than bought? diff from stake.
                 # correct logic depend on ACID (atomicity, consistency, isolation, durability).
                 # cannot be used to cheat (will not parallel) for ACID.
             ),
-            on_burn,
+            on_sell,
         ],
         [
             Int(1),
@@ -249,12 +204,12 @@ def approval_program(asset_config: AssetConfig) -> str:
     )
 
     program = Cond(
-        [Gtxn[0].application_id() == Int(0), on_creation],
-        [Gtxn[0].on_completion() == OnComplete.NoOp, on_call],
-        [Gtxn[0].on_completion() == OnComplete.CloseOut, on_close_out],
-        [Gtxn[0].on_completion() == OnComplete.UpdateApplication, on_update_app],
-        [Gtxn[0].on_completion() == OnComplete.DeleteApplication, on_deleteapp],
-        [Gtxn[0].on_completion() == OnComplete.OptIn, on_opt_in],
+        [AppCall.application_id() == Int(0), on_creation],
+        [AppCall.on_completion() == OnComplete.NoOp, on_call],
+        [AppCall.on_completion() == OnComplete.CloseOut, on_close_out],
+        [AppCall.on_completion() == OnComplete.UpdateApplication, on_update_app],
+        [AppCall.on_completion() == OnComplete.DeleteApplication, on_deleteapp],
+        [AppCall.on_completion() == OnComplete.OptIn, on_opt_in],
     )
 
     return compileTeal(program, Mode.Application, version=TEAL_VERSION)
