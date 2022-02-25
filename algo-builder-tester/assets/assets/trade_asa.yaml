@@ -1,7 +1,0 @@
-aBTC:
-  total: 100000000
-  decimals: 8
-  defaultFrozen: false
-  unitName: "aBTC"
-  url: "url"
-  price: 38_613.14

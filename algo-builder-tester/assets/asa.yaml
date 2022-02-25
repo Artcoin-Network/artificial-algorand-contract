@@ -1,8 +1,4 @@
 # minimum ASA definition (all optional fields omitted)
-minimumASA:
-  total: 1
-  decimals: 0
-  unitName: "unitName"
 minimumASA1:
   total: 1
   decimals: 0
