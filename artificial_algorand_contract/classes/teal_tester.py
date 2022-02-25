@@ -32,7 +32,10 @@ class TealTester:
     teal: TealPackage
 
     def __init__(
-        self, teal_package: TealPackage, app_id: int = None, settings: TypedDict = None
+        self,
+        teal_package: TealPackage,
+        app_id: int | None = None,
+        settings: TypedDict | None = None,
     ):
         from .algo_config import algo_config, config_initialized
 
@@ -80,29 +83,29 @@ class TealTester:
 
     def opt_in(
         self,
-        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         opt_in_app(self.client, sk, self.app_id)
 
     def close_out(
         self,
-        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         close_out_app(self.client, sk, self.app_id)
 
     def clear(
         self,
-        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc,
     ) -> None:
         sk = self._literal_to_account(account).get_secret_key()
         clear_app(self.client, sk, self.app_id)
 
     def call(
         self,
-        account: Literal["admin", "alice", "bob"] | AlgoAcc = None,
-        args: TealNoOpArgs = None,
+        account: Literal["admin", "alice", "bob"] | AlgoAcc,
+        args: TealNoOpArgs | None = None,
     ):
         # app_args = [args..encode("utf-8")]
         # TODO: add args check
