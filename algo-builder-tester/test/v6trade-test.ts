@@ -240,9 +240,9 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     this.beforeEach(resetInitStatus);
     this.afterEach(resetInitStatus);
     it("buy aBTC of 2aUSD ", function () {
-      const usdPaid = BigInt(2e6); // 2aUSD,
-      const btcCollected = BigInt(
-        Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
+      const aUsdPaid = BigInt(2e6); // 2aUSD,
+      const aBtcCollected = BigInt(
+        Math.floor((Number(aUsdPaid) * 1e8) / 1e6 / 38613.14)
         // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
         // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = aBTC_amount
       );
@@ -252,9 +252,9 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
       alicePayTxParam.assetID = usdID;
-      alicePayTxParam.amount = usdPaid;
+      alicePayTxParam.amount = aUsdPaid;
       aliceCollectTxParam.assetID = btcID;
-      aliceCollectTxParam.amount = btcCollected;
+      aliceCollectTxParam.amount = aBtcCollected;
 
       const receipt = runtime.executeTx(
         [aliceCallParam, alicePayTxParam, aliceCollectTxParam],
@@ -265,14 +265,14 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* Check status after txn */
       syncAccounts();
       assert.equal(
-        dispensedInit - usdPaid,
+        dispensedInit - aUsdPaid,
         alice.assets.get(usdID)!["amount"]!
       );
       assert.equal(
-        dispensedInit + btcCollected,
+        dispensedInit + aBtcCollected,
         alice.assets.get(btcID)!["amount"]!
       );
-      assert.equal(btcCollected, alice.getLocalState(appID, "AAA_balance")); // minted 200 aUSD Unit
+      assert.equal(aBtcCollected, alice.getLocalState(appID, "AAA_balance")); // minted 200 aUSD Unit
 
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
