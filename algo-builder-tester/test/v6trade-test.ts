@@ -161,7 +161,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     return { aBTC, aUSD };
   }
 
-  describe("smart contract basic set up, static price ", function () {
+  describe("smart contract basic set up", function () {
     it("check creator", function () {
       const btcCreator = runtime.getAssetAccount(btcID);
       const usdCreator = runtime.getAssetAccount(usdID);
@@ -179,7 +179,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
   });
-  describe("buy/sell with smart contract, static price ", function () {
+  describe("buy/sell with smart contract, static price", function () {
     let aliceCallParam: typesW.AppCallsParam;
     let alicePayTxParam: typesW.AssetTransferParam;
     let aliceCollectTxParam: typesW.AssetTransferParam;
@@ -277,19 +277,12 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
-    it.only("sell 5179e10-8 aBTC (2aUSD)", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const aBtcPaid = 5179n;
-      const aUsdCollected = 1999774n;
-      /* not 2 aUSD mostly because aBTC rounding (in the buy process) 
-      TODO:discuss: should we return this to users?
-      2/38613.14 *10^8 = 5179.58394
-      fractional part of (5179.58394) = 0.58394
-      0.58394*38613.14/10^8 = 0.00022547757
-      0.00022547757 + 1.999774 = 1.99999948
-      */
-      const initialAliceBtc = aBtcPaid;
-      /* Check status before txn */
+
+    function testSellABtcWithAlice(
+      aBtcPaid: bigint,
+      aUsdCollected: bigint,
+      initialAliceBtc: bigint
+    ) {
       runtime
         .getAccount(alice.address)
         .setLocalState(appID, "AAA_balance", initialAliceBtc);
@@ -301,10 +294,11 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       aliceCollectTxParam.assetID = usdID;
       aliceCollectTxParam.amount = aUsdCollected;
 
-      const receipt = runtime.executeTx(
-        [aliceCallParam, alicePayTxParam, aliceCollectTxParam],
-        5
-      );
+      const receipt = runtime.executeTx([
+        aliceCallParam,
+        alicePayTxParam,
+        aliceCollectTxParam,
+      ]);
 
       /* Check status after txn */
       syncAccounts();
@@ -321,135 +315,87 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
         alice.getLocalState(appID, "AAA_balance")
       ); // minted 200 aUSD Unit
 
-      /* return to initial state */
+      /* extra of return to initial state */
+      runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
+    }
+    it.only("sell 5179e10-8 aBTC (2aUSD)", function () {
+      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
+      const aBtcPaid = 5179n;
+      const aUsdCollected = 1999774n;
+      /* not 2 aUSD mostly because aBTC rounding (in the buy process) 
+      TODO:discuss: should we return this to users?
+      2/38613.14 *10^8 = 5179.58394
+      fractional part of (5179.58394) = 0.58394
+      0.58394*38613.14/10^8 = 0.00022547757
+      0.00022547757 + 1.999774 = 1.99999948
+      */
+      const initialAliceBtc = aBtcPaid;
+
+      testSellABtcWithAlice(aBtcPaid, aUsdCollected, initialAliceBtc);
+    });
+    it.only("sell>balance would fail, TODO:ref: contract", function () {
+      // TODO:discuss: should we assert? :down:
+      // The `AAA_balance-aBtcPaid` will actually throw an error(overflow) for being negative;
+      const aBtcPaid = 5179n;
+      const aUsdCollected = 1999774n;
+      const initialAliceBtc = aBtcPaid - 1n;
+      assert.throws(() => {
+        testSellABtcWithAlice(aBtcPaid, aUsdCollected, initialAliceBtc);
+      }, "RUNTIME_ERR1007: Teal code rejected by logic");
+
+      /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
-    it("throws error if not 3 transactions.", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const aUsdBurned = 200n;
-      const artRedeemed = (aUsdBurned / 10n) * 5n;
+    it.only("throws error if not 3 transactions.", function () {
+      aliceCallParam.appArgs = ["str:sell"];
+      alicePayTxParam.assetID = btcID;
+      alicePayTxParam.amount = 0n;
+      aliceCollectTxParam.assetID = usdID;
+      aliceCollectTxParam.amount = 0n;
 
-      const burnCallParams: typesW.AppCallsParam = {
-        type: typesW.TransactionType.CallApp,
-        sign: typesW.SignType.SecretKey,
-        fromAccount: alice.account,
-        appID: appID,
-        payFlags: { totalFee: fee },
-        appArgs: ["str:burn"],
-      }; // TODO:ref: store a basic call params
-      const burnPayTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: usdID,
-        amount: aUsdBurned,
-        fromAccount: alice.account,
-        toAccountAddr: admin.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const burnCollectTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: btcID,
-        amount: artRedeemed,
-        fromAccount: admin.account,
-        toAccountAddr: alice.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-
-      /* Check status before txn */
-
-      assert.throws(
-        () => runtime.executeTx([burnCallParams, burnPayTxParams]),
-        "RUNTIME_ERR1007: Teal code rejected by logic"
-      );
-      assert.throws(
-        () =>
-          runtime.executeTx([
-            burnCallParams,
-            burnPayTxParams,
-            burnCollectTxParams,
-            burnCollectTxParams,
-          ]),
-        "RUNTIME_ERR1007: Teal code rejected by logic"
-      );
-      // console.log('receipt : ', receipt);
+      assert.throws(() => runtime.executeTx([aliceCallParam, aliceCallParam])); // not 3 transactions
+      // "RUNTIME_ERR1007: Teal code rejected by logic"
+      assert.throws(() =>
+        runtime.executeTx([
+          aliceCallParam,
+          aliceCallParam,
+          aliceCallParam,
+          aliceCallParam,
+        ])
+      ); // not 3 transactions
+      // "RUNTIME_ERR1007: Teal code rejected by logic"
     });
-    it("burn>minted would fail", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const artPaid = 100n;
-      const aUsdCollected = (artPaid * 10n) / 5n;
-      const aUsdBurned = 200n + 1n; // burn 1 unit (1e-6) more aUSD than minted
-      const artRedeemed = (aUsdBurned / 10n) * 5n;
+    it.only("throws error 3 transactions are not Call,Pay,Collect.", function () {
+      aliceCallParam.appArgs = ["str:sell"];
+      alicePayTxParam.assetID = btcID;
+      alicePayTxParam.amount = 0n;
+      aliceCollectTxParam.assetID = usdID;
+      aliceCollectTxParam.amount = 0n;
 
-      const mintCallParams: typesW.AppCallsParam = {
-        type: typesW.TransactionType.CallApp,
-        sign: typesW.SignType.SecretKey,
-        fromAccount: alice.account,
-        appID: appID,
-        payFlags: { totalFee: fee },
-        appArgs: ["str:mint"],
-        // accounts: [admin.address], // :+1L: not working with this method, throwing error
-        // foreignAssets: [btcID, usdID], // unsupported type for itxn_submit at line 211, for version 5
-      }; // TODO:ref: store a basic call params
-      const mintPayTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: btcID,
-        amount: artPaid,
-        fromAccount: alice.account,
-        toAccountAddr: admin.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const mintCollectTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: usdID,
-        amount: aUsdCollected,
-        fromAccount: admin.account,
-        toAccountAddr: alice.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const burnCallParams: typesW.AppCallsParam = {
-        type: typesW.TransactionType.CallApp,
-        sign: typesW.SignType.SecretKey,
-        fromAccount: alice.account,
-        appID: appID,
-        payFlags: { totalFee: fee },
-        appArgs: ["str:burn"],
-      }; // TODO:ref: store a basic call params
-      const burnPayTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: usdID,
-        amount: aUsdBurned,
-        fromAccount: alice.account,
-        toAccountAddr: admin.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const burnCollectTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: btcID,
-        amount: artRedeemed,
-        fromAccount: admin.account,
-        toAccountAddr: alice.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
+      assert.throws(() =>
+        runtime.executeTx([aliceCallParam, alicePayTxParam, alicePayTxParam])
+      ); // not Call,Pay,Collect
+      // "RUNTIME_ERR1007: Teal code rejected by logic" PyTeal.Assert fail different than this.
+      // "RUNTIME_ERR1009: TEAL runtime encountered err opcode at line 144"
+      // TODO:discuss: should we use Assert, Return Fail, or someway to debug Teal for further dev?
+      assert.throws(() =>
+        runtime.executeTx([
+          aliceCallParam,
+          aliceCollectTxParam,
+          aliceCollectTxParam,
+        ])
+      ); // not Call,Pay,Collect
+      // "RUNTIME_ERR1007: Teal code rejected by logic"
 
-      /* Check status before txn */
+      alicePayTxParam.assetID = usdID;
 
-      const mintReceipt = runtime.executeTx([
-        mintCallParams,
-        mintPayTxParams,
-        mintCollectTxParams,
-      ]);
-      assert.throws(() => {
-        const burnReceipt = runtime.executeTx([
-          burnCallParams,
-          burnPayTxParams,
-          burnCollectTxParams,
-        ]);
-      }, "RUNTIME_ERR1007: Teal code rejected by logic");
+      assert.throws(() =>
+        runtime.executeTx([
+          aliceCallParam,
+          alicePayTxParam,
+          aliceCollectTxParam,
+        ])
+      ); // Not paying aBTC
     });
   });
 });
