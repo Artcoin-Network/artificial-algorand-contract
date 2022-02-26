@@ -111,10 +111,10 @@ def approval_program(asset_config: AssetConfig) -> str:
             # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
-            Receiving.sender(),
+            AppCall.sender(),
             Bytes("AAA_balance"),
-            App.localGet(Receiving.sender(), Bytes("AAA_balance"))
-            + Receiving.asset_amount(),
+            App.localGet(AppCall.sender(), Bytes("AAA_balance"))
+            + Sending.asset_amount(),
         ),
         App.globalPut(
             Bytes("price_info"),

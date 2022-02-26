@@ -203,12 +203,12 @@ int 1000000
 gtxn 2 AssetAmount
 ==
 assert
-gtxn 1 Sender
+gtxn 0 Sender
 byte "AAA_balance"
-gtxn 1 Sender
+gtxn 0 Sender
 byte "AAA_balance"
 app_local_get
-gtxn 1 AssetAmount
+gtxn 2 AssetAmount
 +
 app_local_put
 byte "price_info"
