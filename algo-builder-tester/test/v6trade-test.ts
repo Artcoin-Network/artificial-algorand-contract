@@ -227,9 +227,10 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     });
     function assertInitStatus() {
       syncAccounts();
-      console.log("not good : "); // DEV_LOG_TO_REMOVE
-      let als2 = alice.getLocalState(appID, "AAA_balance");
-      console.log("als2 : ", als2); // DEV_LOG_TO_REMOVE
+      assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!); // 1k from dispense
+      assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!); // 1k from dispense
+      assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!); // 2k dispensed
+      assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     }
     it.only("buy aBTC of 2aUSD ", function () {
@@ -243,7 +244,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       // console.log("btcCollected : ", btcCollected); // 5179
 
       /* Check status before txn */
-      // assertInitStatus();
+      assertInitStatus();
 
       /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
@@ -277,20 +278,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       aliceCollectTxParam.assetID = usdID;
       aliceCollectTxParam.amount = usdPaid;
       runtime.executeTx([alicePayTxParam, aliceCollectTxParam]); // signed by alice.sk,admin.sk
-      let als = alice.appsLocalState.get(appID)?.["key-value"];
-      console.log("als : ", als); // DEV_LOG_TO_REMOVE
-
-      let nls = runtime
-        .getAccount(alice.address)
-        .setLocalState(appID, "AAA_balance", 0n);
-      console.log("nls : ", nls); // DEV_LOG_TO_REMOVE
-
-      syncAccounts();
-      let als3 = alice.getLocalState(appID, "AAA_balance");
-      console.log("als3 : ", als3); // DEV_LOG_TO_REMOVE
-
-      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
-      console.log("good : "); // DEV_LOG_TO_REMOVE
+      runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
       assertInitStatus();
     });
     it("sell 5179e10-8 aBTC (2aUSD)", function () {
