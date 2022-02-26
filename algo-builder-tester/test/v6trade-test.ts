@@ -240,12 +240,13 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     this.beforeEach(resetInitStatus);
     this.afterEach(resetInitStatus);
     it("buy aBTC of 2aUSD ", function () {
-      const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
+      const usdPaid = BigInt(2e6); // 2aUSD,
       const btcCollected = BigInt(
         Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
         // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
+        // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = aBTC_amount
       );
-      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
+      //  2/38613.14 *10^8 = 5179.58394 -> 5179 smallest units of BTC.
       // console.log("btcCollected : ", btcCollected); // 5179
 
       /* Transaction */
@@ -280,6 +281,13 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const aBtcPaid = 5179n;
       const aUsdCollected = 1999774n;
+      /* not 2 aUSD mostly because aBTC rounding (in the buy process) 
+      TODO:discuss: should we return this to users?
+      2/38613.14 *10^8 = 5179.58394
+      fractional part of (5179.58394) = 0.58394
+      0.58394*38613.14/10^8 = 0.00022547757
+      0.00022547757 + 1.999774 = 1.99999948
+      */
       const initialAliceBtc = aBtcPaid;
       /* Check status before txn */
       runtime
