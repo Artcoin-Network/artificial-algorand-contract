@@ -124,26 +124,29 @@ def approval_program(asset_config: AssetConfig) -> str:
     )
 
     on_sell = Seq(
-        # user burn aUSD to get $ART$ back,
-        # TODO:feat: checked user has enough staked $ART$ in [on_call]
+        # aBTC->aUSD
         Assert(
             And(
                 Global.group_size() == Int(3),
                 Receiving.asset_receiver() == Global.creator_address(),
-                AppCall.sender() == Receiving.sender(),  # called and paid by same user
+                AppCall.sender() == Receiving.sender(),
                 Receiving.sender() == Sending.asset_receiver(),
-                Receiving.xfer_asset() == Int(aUSD_ID),
-                Sending.xfer_asset() == Int(AAA_ID),
+                Receiving.xfer_asset() == Int(AAA_ID),
+                Sending.xfer_asset() == Int(aUSD_ID),
             ),
         ),
         Assert(
-            (Receiving.asset_amount() << Int(16)) / PRICE_B16
-            == Sending.asset_amount(),  # TODO:discuss: price affected by network delay?
+            (Receiving.asset_amount() * USD_ATOM_IN_ONE * PRICE_B16 / AAA_ATOM_IN_ONE)
+            >> Int(16)
+            == Sending.asset_amount(),
+            # aBTC_shown = aUSD_shown / price
+            # aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
+            # # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
-            Receiving.sender(),
+            AppCall.sender(),
             Bytes("AAA_balance"),
-            App.localGet(Receiving.sender(), Bytes("AAA_balance"))
+            App.localGet(AppCall.sender(), Bytes("AAA_balance"))
             - Sending.asset_amount(),
         ),
         App.globalPut(
@@ -190,12 +193,10 @@ def approval_program(asset_config: AssetConfig) -> str:
         ],
         [
             And(
-                AppCall.application_args[0] == Bytes("burn"),
-                App.localGet(Receiving.asset_sender(), Bytes("AAA_balance"))
+                AppCall.application_args[0] == Bytes("sell"),
+                App.localGet(AppCall.asset_sender(), Bytes("AAA_balance"))
                 >= Receiving.asset_amount(),
                 # TODO:discuss: user should can sell more than bought? diff from stake.
-                # correct logic depend on ACID (atomicity, consistency, isolation, durability).
-                # cannot be used to cheat (will not parallel) for ACID.
             ),
             on_sell,
         ],

@@ -87,9 +87,9 @@ byte "buy"
 ==
 bnz main_l23
 gtxna 0 ApplicationArgs 0
-byte "burn"
+byte "sell"
 ==
-gtxn 1 AssetSender
+gtxn 0 AssetSender
 byte "AAA_balance"
 app_local_get
 gtxn 1 AssetAmount
@@ -134,25 +134,29 @@ gtxn 2 AssetReceiver
 ==
 &&
 gtxn 1 XferAsset
-int 10
+int 9
 ==
 &&
 gtxn 2 XferAsset
-int 9
+int 10
 ==
 &&
 assert
 gtxn 1 AssetAmount
-int 16
-shl
+int 1000000
+*
 int 2530550743
+*
+int 100000000
 /
+int 16
+shr
 gtxn 2 AssetAmount
 ==
 assert
-gtxn 1 Sender
+gtxn 0 Sender
 byte "AAA_balance"
-gtxn 1 Sender
+gtxn 0 Sender
 byte "AAA_balance"
 app_local_get
 gtxn 2 AssetAmount
