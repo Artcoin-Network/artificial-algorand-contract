@@ -4,7 +4,7 @@ from typing import TypedDict
 from artificial_algorand_contract.classes.algorand import TealCmdList
 
 """ NON-AAA CONFIG """
-aUSD_ID = 0
+aUSD_ID = 10
 
 
 class AssetConfig(TypedDict):
@@ -17,7 +17,7 @@ class AssetConfig(TypedDict):
     url: str
     AAA_unit_name: str
     decimals: int
-    AAA_id: int | None
+    AAA_id: int
     total: int  # use same number as real life.
     price: float  # price of some micro unit. in contract using `price * e-[decimal]`
     # piece = atomic unit of the asset. eg. 1 BTC = 10^8 pieces.
@@ -64,7 +64,7 @@ aBTC_config: AssetConfig = {
     "ASSET_name": "Bitcoin",
     "AAA_name": "aBTC",
     "url": "https://bitcoin.org",
-    "AAA_id": None,
+    "AAA_id": 9,
     "total": 100000000,
     "AAA_unit_name": "aBTC",
     "price": 38_613.14,

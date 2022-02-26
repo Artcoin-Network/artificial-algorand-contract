@@ -26,7 +26,11 @@ bnz main_l7
 err
 main_l7:
 gtxn 0 Sender
-byte "aBTC"
+byte "AAA_balance"
+int 0
+app_local_put
+gtxn 0 Sender
+byte "margin_trading"
 int 0
 app_local_put
 gtxn 0 Sender
@@ -126,11 +130,11 @@ gtxn 2 AssetReceiver
 ==
 &&
 gtxn 1 XferAsset
-int 0
+int 10
 ==
 &&
 gtxn 2 XferAsset
-int 0
+int 9
 ==
 &&
 assert
@@ -175,11 +179,11 @@ gtxn 2 AssetReceiver
 ==
 &&
 gtxn 1 XferAsset
-int 0
+int 10
 ==
 &&
 gtxn 2 XferAsset
-int 0
+int 9
 ==
 &&
 assert

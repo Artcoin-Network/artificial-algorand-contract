@@ -62,7 +62,9 @@ def approval_program(asset_config: AssetConfig) -> str:
     """
     # All asset in this contract are counted in units of its own "decimal".
     # for typing and readability
-    AAA_ID = asset_config["AAA_id"] or 0  # raise exception?
+    AAA_ID = asset_config["AAA_id"]  # raise exception?
+    if AAA_ID == 0:
+        input("AAA_ID shouldn't be 0")
     AAA_NAME = asset_config["AAA_name"]
     SUM_ASSET = f"+{AAA_NAME}"
     STABLE_ID = aUSD_ID
@@ -94,8 +96,8 @@ def approval_program(asset_config: AssetConfig) -> str:
                 Receiving.asset_receiver() == Global.creator_address(),
                 AppCall.sender() == Receiving.sender(),
                 Receiving.sender() == Sending.asset_receiver(),
-                Receiving.xfer_asset() == Int(AAA_ID),
-                Sending.xfer_asset() == Int(STABLE_ID),
+                Receiving.xfer_asset() == Int(STABLE_ID),
+                Sending.xfer_asset() == Int(AAA_ID),
             ),
         ),
         Assert(
@@ -125,8 +127,7 @@ def approval_program(asset_config: AssetConfig) -> str:
                 Global.group_size() == Int(3),
                 Receiving.asset_receiver() == Global.creator_address(),
                 AppCall.sender() == Receiving.sender(),  # called and paid by same user
-                Receiving.sender()
-                == Sending.asset_receiver(),  #  and mint to same user
+                Receiving.sender() == Sending.asset_receiver(),
                 Receiving.xfer_asset() == Int(STABLE_ID),
                 Sending.xfer_asset() == Int(AAA_ID),
             ),
@@ -159,7 +160,8 @@ def approval_program(asset_config: AssetConfig) -> str:
     )  # global_ints_scheme
 
     on_opt_in = Seq(
-        App.localPut(AppCall.sender(), Bytes(AAA_NAME), Int(0)),
+        App.localPut(AppCall.sender(), Bytes("AAA_balance"), Int(0)),
+        App.localPut(AppCall.sender(), Bytes("margin_trading"), Int(0)),
         App.localPut(AppCall.sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
         SucceedSeq,
     )  # always allow user to opt in
