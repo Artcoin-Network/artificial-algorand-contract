@@ -69,6 +69,7 @@ def approval_program(asset_config: AssetConfig) -> str:
     SUM_ASSET = f"+{AAA_NAME}"
     STABLE_ID = aUSD_ID
     PRICE_B16 = Int(int(asset_config["price"] * 2**16))
+    AAA_ATOM_IN_ONE = Int(10 ** asset_config["decimals"])
     SucceedSeq = Seq(Return(Int(1)))
     AppCall = Gtxn[0]
     Receiving = Gtxn[1]
@@ -101,7 +102,8 @@ def approval_program(asset_config: AssetConfig) -> str:
             ),
         ),
         Assert(
-            (Receiving.asset_amount() * PRICE_B16) << Int(16) == Sending.asset_amount(),
+            (Receiving.asset_amount() << Int(16)) * AAA_ATOM_IN_ONE / PRICE_B16
+            == Sending.asset_amount(),
             # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
