@@ -3,6 +3,7 @@ from pyteal import (
     App,
     Assert,
     Bytes,
+    Concat,
     Cond,
     Ed25519Verify,
     Global,
@@ -63,10 +64,11 @@ def approval_program(asset_config: AssetConfig) -> str:
     AAA_ID = asset_config["AAA_id"]  # raise exception?
     if AAA_ID == 0:
         input("AAA_ID shouldn't be 0")
-    AAA_NAME = asset_config["AAA_name"]
-    SUM_ASSET = f"+{AAA_NAME}"
     PRICE_B16 = Int(int(asset_config["price"] * 2**16))
     AAA_ATOM_IN_ONE = Int(10 ** asset_config["decimals"])
+    # TODO:ref: why this run twice??
+    # print(asset_config["decimals"])
+    # print(AAA_ATOM_IN_ONE)
     SucceedSeq = Seq(Return(Int(1)))
     AppCall = Gtxn[0]
     Receiving = Gtxn[1]
@@ -104,17 +106,19 @@ def approval_program(asset_config: AssetConfig) -> str:
             / PRICE_B16
             / USD_ATOM_IN_ONE
             == Sending.asset_amount(),
+            # aBTC_shown = aUSD_shown / price
+            # aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
             # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
             Receiving.sender(),
-            Bytes(AAA_NAME),
-            App.localGet(Receiving.sender(), Bytes(AAA_NAME))
+            Bytes("AAA_balance"),
+            App.localGet(Receiving.sender(), Bytes("AAA_balance"))
             + Receiving.asset_amount(),
         ),
         App.globalPut(
-            Bytes(SUM_ASSET),
-            App.globalGet(Bytes(SUM_ASSET)) + (Receiving.asset_amount()),
+            Bytes("price_info"),
+            Concat(App.globalGet(Bytes("price_info")), Bytes(",usr-buy")),
         ),
         SucceedSeq,
     )
@@ -138,16 +142,18 @@ def approval_program(asset_config: AssetConfig) -> str:
         ),
         App.localPut(
             Receiving.sender(),
-            Bytes(AAA_NAME),
-            App.localGet(Receiving.sender(), Bytes(AAA_NAME)) - Sending.asset_amount(),
+            Bytes("AAA_balance"),
+            App.localGet(Receiving.sender(), Bytes("AAA_balance"))
+            - Sending.asset_amount(),
         ),
         App.globalPut(
-            Bytes(SUM_ASSET), App.globalGet(Bytes(SUM_ASSET)) - Sending.asset_amount()
+            Bytes("price_info"),
+            Concat(App.globalGet(Bytes("price_info")), Bytes(",usr-sell")),
         ),
         SucceedSeq,
     )
     on_creation = Seq(
-        App.globalPut(Bytes(SUM_ASSET), Int(0)),
+        App.globalPut(Bytes("price_info"), Bytes("waiting ZKP")),
         # == DEFAULT_CR*(2**CRDD), value of $ART$ minted / value of aUSD issued == DEFAULT_CR.
         SucceedSeq,
     )  # global_ints_scheme
@@ -155,6 +161,7 @@ def approval_program(asset_config: AssetConfig) -> str:
     on_opt_in = Seq(
         App.localPut(AppCall.sender(), Bytes("AAA_balance"), Int(0)),
         App.localPut(AppCall.sender(), Bytes("margin_trading"), Int(0)),
+        App.localPut(AppCall.sender(), Bytes("margin_rate"), Int(1)),
         App.localPut(AppCall.sender(), Bytes("last_msg"), Bytes("OptIn OK.")),
         SucceedSeq,
     )  # always allow user to opt in
@@ -184,7 +191,7 @@ def approval_program(asset_config: AssetConfig) -> str:
         [
             And(
                 AppCall.application_args[0] == Bytes("burn"),
-                App.localGet(Receiving.asset_sender(), Bytes(AAA_NAME))
+                App.localGet(Receiving.asset_sender(), Bytes("AAA_balance"))
                 >= Receiving.asset_amount(),
                 # TODO:discuss: user should can sell more than bought? diff from stake.
                 # correct logic depend on ACID (atomicity, consistency, isolation, durability).
