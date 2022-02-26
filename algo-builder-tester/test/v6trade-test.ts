@@ -226,17 +226,10 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
     function assertInitStatus() {
-      // TODO:discuss: can't "beforeEach"
-      syncAccounts();
-      // TODO:ref: mb use  `alice.getAssetHolding`
-      assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!); // 1k from dispense
-      assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!); // 1k from dispense
-      assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!); // 2k dispensed
-      assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
       syncAccounts();
       console.log("not good : "); // DEV_LOG_TO_REMOVE
-      let als = alice.getLocalState(appID, "AAA_balance");
-      console.log("als : ", als); // DEV_LOG_TO_REMOVE
+      let als2 = alice.getLocalState(appID, "AAA_balance");
+      console.log("als2 : ", als2); // DEV_LOG_TO_REMOVE
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     }
     it.only("buy aBTC of 2aUSD ", function () {
@@ -248,8 +241,10 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       );
       // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
       // console.log("btcCollected : ", btcCollected); // 5179
+
       /* Check status before txn */
-      assertInitStatus();
+      // assertInitStatus();
+
       /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
       alicePayTxParam.assetID = usdID;
@@ -285,8 +280,15 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       let als = alice.appsLocalState.get(appID)?.["key-value"];
       console.log("als : ", als); // DEV_LOG_TO_REMOVE
 
-      let nls = alice.setLocalState(appID, "AAA_balance", 0n);
+      let nls = runtime
+        .getAccount(alice.address)
+        .setLocalState(appID, "AAA_balance", 0n);
       console.log("nls : ", nls); // DEV_LOG_TO_REMOVE
+
+      syncAccounts();
+      let als3 = alice.getLocalState(appID, "AAA_balance");
+      console.log("als3 : ", als3); // DEV_LOG_TO_REMOVE
+
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
       console.log("good : "); // DEV_LOG_TO_REMOVE
       assertInitStatus();
