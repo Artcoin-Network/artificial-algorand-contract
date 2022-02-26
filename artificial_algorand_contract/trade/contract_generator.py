@@ -4,7 +4,7 @@ from .trade_contract import approval_program, clear_program, gen_teal_param
 from ..classes.algorand import TealCmdList, TealPackage, TealParam
 
 
-def gen_trade_contract(asset_config: AssetConfig) -> TealPackage:
+def gen_trade_contract_package(asset_config: AssetConfig) -> TealPackage:
     """
     Generate the trade contract TEAL TealPackage by AssetConfig
 
@@ -25,4 +25,4 @@ def gen_trade_contract(asset_config: AssetConfig) -> TealPackage:
 
 
 # example
-btc_package = gen_trade_contract(aBTC_config)
+btc_package = gen_trade_contract_package(aBTC_config)

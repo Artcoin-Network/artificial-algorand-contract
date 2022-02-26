@@ -226,7 +226,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
     function assertInitStatus() {
-      // TODO:discuss: can't "beforeEach"
+      // TODO:: can't "beforeEach" : new describe()
       syncAccounts();
       // TODO:ref: mb use  `alice.getAssetHolding`
       assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!); // 1k from dispense
@@ -281,15 +281,16 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       alicePayTxParam.amount = btcCollected;
       aliceCollectTxParam.assetID = usdID;
       aliceCollectTxParam.amount = usdPaid;
+      // alice.assets.get(btcID)!["amount"]! = dispensedInit;
       runtime.executeTx([alicePayTxParam, aliceCollectTxParam]); // signed by alice.sk,admin.sk
       let als = alice.appsLocalState.get(appID)?.["key-value"];
       console.log("als : ", als); // DEV_LOG_TO_REMOVE
 
       let nls = alice.setLocalState(appID, "AAA_balance", 0n);
       console.log("nls : ", nls); // DEV_LOG_TO_REMOVE
-      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
       console.log("good : "); // DEV_LOG_TO_REMOVE
       assertInitStatus();
+      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     });
     it("sell 5179e10-8 aBTC (2aUSD)", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).

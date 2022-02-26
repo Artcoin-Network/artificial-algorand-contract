@@ -66,7 +66,7 @@ global_ints_scheme = {
     "CRN": "collateralisation ratio = numerator / 2^CRDD, \
         in range [0,2^CRDD] with precision of 2^-CRDD (too fine precision).",
     # collateralisation ratio numerator
-    # TODO:discuss: precision 2^-16 should be enough, we don't need that much.
+    # TODO:DO: precision 2^-16 should be enough, we don't need that much.
     # TODO:+: Decimal is clearer. 2^-16 ~== 0.0015%. the floating range is much larger.
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
@@ -125,7 +125,7 @@ def approval_program():
         ),
         Assert(
             scratch_issuing.load()
-            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+            == Gtxn[2].asset_amount(),  # TODO:SKIP: price affected by network delay?
         ),
         App.localPut(
             Gtxn[1].sender(),
@@ -173,7 +173,7 @@ def approval_program():
         ),
         Assert(
             scratch_returning.load()  # TODO:ref: not needed, can use Gtxn[2].asset_amount()
-            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+            == Gtxn[2].asset_amount(),  # TODO:SKIP: price affected by network delay?
         ),
         App.localPut(
             Gtxn[1].sender(),
@@ -249,7 +249,7 @@ def approval_program():
                 Gtxn[0].application_args[0] == Bytes("burn"),
                 App.localGet(Gtxn[1].asset_sender(), Bytes(STABLE_NAME))
                 >= Gtxn[1].asset_amount(),
-                # TODO:discuss: move to on_burn? needed? (TEAL has integer underflow)
+                # TODO:: move to on_burn? needed? (TEAL has integer underflow)
                 # correct logic depend on ACID (atomicity, consistency, isolation, durability).
                 # cannot be used to cheat (will not parallel) for ACID.
             ),

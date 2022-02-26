@@ -41,10 +41,10 @@ def exporter_test():
     # from .stake import stake_package
     # Exporter(stake_package).export()
 
-    from .trade.contract_generator import gen_trade_contract
+    from .trade.contract_generator import gen_trade_contract_package
     from .trade.asset_config import aBTC_config
 
-    Exporter(gen_trade_contract(aBTC_config)).export()
+    Exporter(gen_trade_contract_package(aBTC_config)).export()
 
 
 if __name__ == "__main__":

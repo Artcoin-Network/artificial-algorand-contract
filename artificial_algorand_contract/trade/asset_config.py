@@ -22,9 +22,9 @@ class AssetConfig(TypedDict):
     price: float  # price of some micro unit. in contract using `price * e-[decimal]`
     # piece = atomic unit of the asset. eg. 1 BTC = 10^8 pieces.
     # price_e6 = integer, with a fixed unit of 1^10-6USD. So all are integer, more readable.
-    # price_b16 = integer, with a fixed unit of 2^-16USD. So all are integer, less cost.
+    # price_b16 = integer, with a fixed unit of 2^-16USD. So all are integer, less cost. OK USE THIS!
     # using price_b16
-    # TODO:discuss: we have a margin of error in price. Price should be dependent on it.
+    # TODO:DONE: we have a margin of error in price. Price should be dependent on it.
     # starting with contract_: only used in contract part, not in ASA part.
     contract_cmd_list: TealCmdList
     contract_local_ints_scheme: list | dict  # only care about len
@@ -51,14 +51,14 @@ default_local_ints_scheme = {
     "AAA_balance": "how many AAA user has",
     "margin_trading": "if user is allowed, 1/0",
     "margin_rate": "how to save diffrent margin rate on every trade?"
-    # TODO:discuss: :up:
-    # TODO:discuss: "limit" function (e.g. will buy when price is lower than limit) on chain?
+    # TODO:SKIP: :up:
+    # TODO:SKIP: "limit" function (e.g. will buy when price is lower than limit) on chain?
 }
 default_local_bytes_scheme = ["last_msg"]
 default_global_ints_scheme = []
 default_global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
-# TODO:discuss: do we need 3 contracts for 1 AAA? price_info, ZKP and trade
-# TODO:discuss: 1 account can have 10 smart contract.
+# TODO:todo: do we need 3 contracts for 1 AAA? price_info, ZKP and trade : read another global state
+# TODO:DONE: 1 account can have 10 smart contract.
 
 aBTC_config: AssetConfig = {
     "ASSET_name": "Bitcoin",
