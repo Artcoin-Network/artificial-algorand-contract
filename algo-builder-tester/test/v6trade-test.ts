@@ -239,7 +239,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     }
     this.beforeEach(resetInitStatus);
     this.afterEach(resetInitStatus);
-    it.only("buy aBTC of 2aUSD ", function () {
+    it("buy aBTC of 2aUSD ", function () {
       const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
       const btcCollected = BigInt(
         Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
@@ -272,47 +272,49 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
         alice.assets.get(btcID)!["amount"]!
       );
       assert.equal(btcCollected, alice.getLocalState(appID, "AAA_balance")); // minted 200 aUSD Unit
-      // TODO:ref:#1: should return to the initial state after each test
 
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
-    it("sell 5179e10-8 aBTC (2aUSD)", function () {
+    it.only("sell 5179e10-8 aBTC (2aUSD)", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const aBtcPaid = 5179n;
-      const aUsdCollected = (aBtcPaid / 10n) * 5n;
+      const aUsdCollected = 1999774n;
+      const initialAliceBtc = aBtcPaid;
       /* Check status before txn */
-      resetInitStatus();
+      runtime
+        .getAccount(alice.address)
+        .setLocalState(appID, "AAA_balance", initialAliceBtc);
+
       /* Txn */
+      aliceCallParam.appArgs = ["str:sell"];
       alicePayTxParam.assetID = btcID;
       alicePayTxParam.amount = aBtcPaid;
       aliceCollectTxParam.assetID = usdID;
       aliceCollectTxParam.amount = aUsdCollected;
-      syncAccounts();
-      assert.equal(900n, alice.assets.get(btcID)!["amount"]!); // FROM LAST TEST (escrow)
-      assert.equal(999999998100n, admin.assets.get(btcID)!["amount"]!); // FROM LAST TEST (escrow)
-      assert.equal(100n, alice.getLocalState(appID, ASSET_NAME)); // FROM LAST TEST (escrow)
-      assert.equal(200n, alice.getLocalState(appID, STABLE_NAME)); // FROM LAST TEST (escrow)
 
-      const receipt = runtime.executeTx([
-        aliceCallParam,
-        alicePayTxParam,
-        aliceCollectTxParam,
-      ]);
-      // console.log('receipt : ', receipt);
+      const receipt = runtime.executeTx(
+        [aliceCallParam, alicePayTxParam, aliceCollectTxParam],
+        5
+      );
 
       /* Check status after txn */
       syncAccounts();
-      assert.equal(1000n, alice.assets.get(btcID)!["amount"]!);
-      assert.equal(999999998000n, admin.assets.get(btcID)!["amount"]!);
-      assert.equal(0n, alice.getLocalState(appID, ASSET_NAME)); // holding 0 AAA
-      assert.equal(0n, alice.getLocalState(appID, STABLE_NAME)); // minted 0 aUSD Unit
-      // TODO:ref:#1: should return to the initial state after each test
+      assert.equal(
+        dispensedInit + aUsdCollected,
+        alice.assets.get(usdID)!["amount"]!
+      );
+      assert.equal(
+        dispensedInit - aBtcPaid,
+        alice.assets.get(btcID)!["amount"]!
+      );
+      assert.equal(
+        initialAliceBtc - aBtcPaid,
+        alice.getLocalState(appID, "AAA_balance")
+      ); // minted 200 aUSD Unit
+
       /* return to initial state */
-      alicePayTxParam.assetID = usdID;
-      alicePayTxParam.amount = aUsdCollected;
-      aliceCollectTxParam.assetID = btcID;
-      aliceCollectTxParam.amount = aBtcPaid;
+      runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
     it("throws error if not 3 transactions.", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
