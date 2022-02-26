@@ -64,9 +64,9 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       {
         sender: admin.account,
         globalBytes: 1,
-        globalInts: 3,
+        globalInts: 0,
         localBytes: 1,
-        localInts: 2,
+        localInts: 3,
       },
       {}
     ).appID; // This number is always 9
@@ -77,6 +77,8 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     runtime.optInToApp(billy.address, appID, {}, {});
 
     syncAccounts();
+    createAssets();
+
     const _addresses = {
       admin_addr: admin.address,
       admin_pubKDec: u8a2Dec(parsing.addressToPk(admin.address)),
@@ -88,9 +90,13 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       billy_pubKDec: u8a2Dec(parsing.addressToPk(billy.address)),
       billy_pubKHex: u8a2Hex(parsing.addressToPk(billy.address)),
     };
+    const _assets = {
+      aBTC: btcID,
+      aUSD: usdID,
+    };
     console.log("addresses used in this test : ", _addresses);
+    console.log("asset ID used in this test : ", _assets);
     // create asset
-    createAssets();
   });
 
   function createAssets() {
@@ -149,6 +155,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     runtime.executeTx(dispenseUsdTxParams);
     dispenseUsdTxParams.toAccountAddr = billy.address;
     runtime.executeTx(dispenseUsdTxParams);
+    return { aBTC, aUSD };
   }
 
   describe("related ASA", function () {
@@ -218,10 +225,13 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
 
     it.only("buy 1 btc", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const usdPaid = 100000n; // can be 100 (bigint is not a must)
-      // CR unit is 2^-16. 5n next line means 5>>16 * UnitCR.
-      const btcCollected = usdPaid; // (num*price/CR)
-
+      const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
+      const btcCollected = BigInt(
+        Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
+        // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
+      );
+      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
+      console.log("btcCollected : ", btcCollected); // 5179
       aliceCallParam.appArgs = ["str:buy"];
       alicePayTxParams.assetID = usdID;
       alicePayTxParams.amount = usdPaid;
@@ -235,22 +245,23 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // staked 0 $ART$ Unit
 
-      const receipt = runtime.executeTx([
-        aliceCallParam,
-        alicePayTxParams,
-        aliceCollectTxParams,
-      ]);
+      const receipt = runtime.executeTx(
+        [aliceCallParam, alicePayTxParams, aliceCollectTxParams],
+        0
+      );
       // console.log('receipt : ', receipt);
 
       /* Check status after txn */
       syncAccounts();
       assert.equal(
         dispensedInit - usdPaid,
+        alice.assets.get(usdID)!["amount"]!
+      );
+      assert.equal(
+        dispensedInit + btcCollected,
         alice.assets.get(btcID)!["amount"]!
       );
-      assert.equal(999999998100n, admin.assets.get(btcID)!["amount"]!);
-      assert.equal(100n, alice.getLocalState(appID, ASSET_NAME)); // staked 100 $ART$ Unit
-      assert.equal(200n, alice.getLocalState(appID, STABLE_NAME)); // minted 200 aUSD Unit
+      assert.equal(btcCollected, alice.getLocalState(appID, "AAA_balance")); // minted 200 aUSD Unit
       // TODO:ref:#1: should return to the initial state after each test
     });
     it("burn 200 aUSD to redeem 200/10*5 (#aUSD/$ART$price*CR) == 100 $ART$", function () {
