@@ -161,6 +161,24 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     return { aBTC, aUSD };
   }
 
+  describe("smart contract basic set up, static price ", function () {
+    it("check creator", function () {
+      const btcCreator = runtime.getAssetAccount(btcID);
+      const usdCreator = runtime.getAssetAccount(usdID);
+      const SCCreator = runtime.getApp(appID).creator;
+      assert.equal(btcCreator.address, admin.address);
+      assert.equal(usdCreator.address, admin.address);
+      assert.equal(SCCreator, admin.address);
+    });
+    it("assert alice opted into ASA", function () {
+      syncAccounts();
+      const last_msg: Uint8Array = alice.getLocalState(
+        appID,
+        "last_msg"
+      ) as Uint8Array;
+      assert.equal(u8a2Str(last_msg), "OptIn OK.");
+    });
+  });
   describe("buy/sell with smart contract, static price ", function () {
     let aliceCallParam: typesW.AppCallsParam;
     let alicePayTxParam: typesW.AssetTransferParam;
@@ -193,22 +211,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
         payFlags: { totalFee: fee },
       };
     });
-    it("check creator", function () {
-      const btcCreator = runtime.getAssetAccount(btcID);
-      const usdCreator = runtime.getAssetAccount(usdID);
-      const SCCreator = runtime.getApp(appID).creator;
-      assert.equal(btcCreator.address, admin.address);
-      assert.equal(usdCreator.address, admin.address);
-      assert.equal(SCCreator, admin.address);
-    });
-    it("assert alice opted into ASA", function () {
-      syncAccounts();
-      const last_msg: Uint8Array = alice.getLocalState(
-        appID,
-        "last_msg"
-      ) as Uint8Array;
-      assert.equal(u8a2Str(last_msg), "OptIn OK.");
-    });
+
     function assertInitStatus() {
       // TODO:: can't "beforeEach" : new describe()
       syncAccounts();
@@ -218,6 +221,8 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     }
+    this.beforeEach(assertInitStatus);
+    this.afterEach(assertInitStatus);
     it.only("buy aBTC of 2aUSD ", function () {
       const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
       const btcCollected = BigInt(
@@ -226,9 +231,6 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       );
       // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
       // console.log("btcCollected : ", btcCollected); // 5179
-
-      /* Check status before txn */
-      assertInitStatus();
 
       /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
@@ -261,12 +263,9 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       alicePayTxParam.amount = btcCollected;
       aliceCollectTxParam.assetID = usdID;
       aliceCollectTxParam.amount = usdPaid;
-      // alice.assets.get(btcID)!["amount"]! = dispensedInit;
+      // runtime.getAccount(alice.add).assets.get(btcID)!["amount"]! = dispensedInit;
       runtime.executeTx([alicePayTxParam, aliceCollectTxParam]); // signed by alice.sk,admin.sk
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
-      assertInitStatus();
-
-      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     });
     it("sell 5179e10-8 aBTC (2aUSD)", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
