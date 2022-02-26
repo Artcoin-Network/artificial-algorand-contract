@@ -161,22 +161,6 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     return { aBTC, aUSD };
   }
 
-  describe("related ASA", function () {
-    it("Asset creation and dispense", function () {
-      const adminAssets = admin.createdAssets;
-      syncAccounts();
-      assert.isTrue(adminAssets.has(btcID) && adminAssets.has(usdID));
-      // dispensed 1k $ART$ to alice and billy
-      assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!);
-      assert.equal(dispensedInit, billy.assets.get(btcID)!["amount"]!);
-      assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!);
-      assert.equal(dispensedInit, billy.assets.get(usdID)!["amount"]!);
-      // from admin was $ART$ dispensed
-      assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!);
-      assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!);
-    });
-  });
-
   describe("buy/sell with smart contract, static price ", function () {
     let aliceCallParam: typesW.AppCallsParam;
     let alicePayTxParam: typesW.AssetTransferParam;
@@ -225,32 +209,21 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       ) as Uint8Array;
       assert.equal(u8a2Str(last_msg), "OptIn OK.");
     });
-    function assertInitStatus() {
-      // TODO:discuss: can't "beforeEach"
-      syncAccounts();
-      // TODO:ref: mb use  `alice.getAssetHolding`
-      assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!); // 1k from dispense
-      assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!); // 1k from dispense
-      assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!); // 2k dispensed
-      assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
-      syncAccounts();
+    function assertInitStatus(aliceOut) {
       console.log("not good : "); // DEV_LOG_TO_REMOVE
-      let als = alice.getLocalState(appID, "AAA_balance");
-      console.log("als : ", als); // DEV_LOG_TO_REMOVE
-      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
+      console.log("aliceIn.appsLocalState : ", alice.appsLocalState); // DEV_LOG_TO_REMOVE
+      console.log("aliceOut.appsLocalState: ", aliceOut.appsLocalState); // DEV_LOG_TO_REMOVE
+      // syncAccounts();
+      let als2 = alice.getLocalState(appID, "AAA_balance");
+      console.log("als2 : ", als2); // DEV_LOG_TO_REMOVE
+      assert.equal(0n, als2); // holding 0 AAA
     }
     it.only("buy aBTC of 2aUSD ", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
       const btcCollected = BigInt(
         Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
         // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
       );
-      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
-      // console.log("btcCollected : ", btcCollected); // 5179
-      /* Check status before txn */
-      assertInitStatus();
-      /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
       alicePayTxParam.assetID = usdID;
       alicePayTxParam.amount = usdPaid;
@@ -264,196 +237,17 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       // console.log('receipt : ', receipt);
 
       /* Check status after txn */
-      syncAccounts();
-      assert.equal(
-        dispensedInit - usdPaid,
-        alice.assets.get(usdID)!["amount"]!
-      );
-      assert.equal(
-        dispensedInit + btcCollected,
-        alice.assets.get(btcID)!["amount"]!
-      );
-      assert.equal(btcCollected, alice.getLocalState(appID, "AAA_balance")); // minted 200 aUSD Unit
-      // TODO:ref:#1: should return to the initial state after each test
-
-      /* return to initial state */
-      alicePayTxParam.assetID = btcID;
-      alicePayTxParam.amount = btcCollected;
-      aliceCollectTxParam.assetID = usdID;
-      aliceCollectTxParam.amount = usdPaid;
-      runtime.executeTx([alicePayTxParam, aliceCollectTxParam]); // signed by alice.sk,admin.sk
       let als = alice.appsLocalState.get(appID)?.["key-value"];
       console.log("als : ", als); // DEV_LOG_TO_REMOVE
 
       let nls = alice.setLocalState(appID, "AAA_balance", 0n);
       console.log("nls : ", nls); // DEV_LOG_TO_REMOVE
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
+      // syncAccounts();
+      let als1 = alice.getLocalState(appID, "AAA_balance");
+      console.log("als1 : ", als1); // DEV_LOG_TO_REMOVE
       console.log("good : "); // DEV_LOG_TO_REMOVE
-      assertInitStatus();
-    });
-    it("sell 5179e10-8 aBTC (2aUSD)", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const aBtcPaid = 5179n;
-      const aUsdCollected = (aBtcPaid / 10n) * 5n;
-      /* Check status before txn */
-      assertInitStatus();
-      /* Txn */
-      alicePayTxParam.assetID = btcID;
-      alicePayTxParam.amount = aBtcPaid;
-      aliceCollectTxParam.assetID = usdID;
-      aliceCollectTxParam.amount = aUsdCollected;
-      syncAccounts();
-      assert.equal(900n, alice.assets.get(btcID)!["amount"]!); // FROM LAST TEST (escrow)
-      assert.equal(999999998100n, admin.assets.get(btcID)!["amount"]!); // FROM LAST TEST (escrow)
-      assert.equal(100n, alice.getLocalState(appID, ASSET_NAME)); // FROM LAST TEST (escrow)
-      assert.equal(200n, alice.getLocalState(appID, STABLE_NAME)); // FROM LAST TEST (escrow)
-
-      const receipt = runtime.executeTx([
-        aliceCallParam,
-        alicePayTxParam,
-        aliceCollectTxParam,
-      ]);
-      // console.log('receipt : ', receipt);
-
-      /* Check status after txn */
-      syncAccounts();
-      assert.equal(1000n, alice.assets.get(btcID)!["amount"]!);
-      assert.equal(999999998000n, admin.assets.get(btcID)!["amount"]!);
-      assert.equal(0n, alice.getLocalState(appID, ASSET_NAME)); // holding 0 AAA
-      assert.equal(0n, alice.getLocalState(appID, STABLE_NAME)); // minted 0 aUSD Unit
-      // TODO:ref:#1: should return to the initial state after each test
-      /* return to initial state */
-      alicePayTxParam.assetID = usdID;
-      alicePayTxParam.amount = aUsdCollected;
-      aliceCollectTxParam.assetID = btcID;
-      aliceCollectTxParam.amount = aBtcPaid;
-    });
-    it("throws error if not 3 transactions.", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const aUsdBurned = 200n;
-      const artRedeemed = (aUsdBurned / 10n) * 5n;
-
-      const burnCallParams: typesW.AppCallsParam = {
-        type: typesW.TransactionType.CallApp,
-        sign: typesW.SignType.SecretKey,
-        fromAccount: alice.account,
-        appID: appID,
-        payFlags: { totalFee: fee },
-        appArgs: ["str:burn"],
-      }; // TODO:ref: store a basic call params
-      const burnPayTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: usdID,
-        amount: aUsdBurned,
-        fromAccount: alice.account,
-        toAccountAddr: admin.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const burnCollectTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: btcID,
-        amount: artRedeemed,
-        fromAccount: admin.account,
-        toAccountAddr: alice.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-
-      /* Check status before txn */
-
-      assert.throws(
-        () => runtime.executeTx([burnCallParams, burnPayTxParams]),
-        "RUNTIME_ERR1007: Teal code rejected by logic"
-      );
-      assert.throws(
-        () =>
-          runtime.executeTx([
-            burnCallParams,
-            burnPayTxParams,
-            burnCollectTxParams,
-            burnCollectTxParams,
-          ]),
-        "RUNTIME_ERR1007: Teal code rejected by logic"
-      );
-      // console.log('receipt : ', receipt);
-    });
-    it("burn>minted would fail", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
-      const artPaid = 100n;
-      const aUsdCollected = (artPaid * 10n) / 5n;
-      const aUsdBurned = 200n + 1n; // burn 1 unit (1e-6) more aUSD than minted
-      const artRedeemed = (aUsdBurned / 10n) * 5n;
-
-      const mintCallParams: typesW.AppCallsParam = {
-        type: typesW.TransactionType.CallApp,
-        sign: typesW.SignType.SecretKey,
-        fromAccount: alice.account,
-        appID: appID,
-        payFlags: { totalFee: fee },
-        appArgs: ["str:mint"],
-        // accounts: [admin.address], // :+1L: not working with this method, throwing error
-        // foreignAssets: [btcID, usdID], // unsupported type for itxn_submit at line 211, for version 5
-      }; // TODO:ref: store a basic call params
-      const mintPayTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: btcID,
-        amount: artPaid,
-        fromAccount: alice.account,
-        toAccountAddr: admin.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const mintCollectTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: usdID,
-        amount: aUsdCollected,
-        fromAccount: admin.account,
-        toAccountAddr: alice.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const burnCallParams: typesW.AppCallsParam = {
-        type: typesW.TransactionType.CallApp,
-        sign: typesW.SignType.SecretKey,
-        fromAccount: alice.account,
-        appID: appID,
-        payFlags: { totalFee: fee },
-        appArgs: ["str:burn"],
-      }; // TODO:ref: store a basic call params
-      const burnPayTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: usdID,
-        amount: aUsdBurned,
-        fromAccount: alice.account,
-        toAccountAddr: admin.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-      const burnCollectTxParams: typesW.AssetTransferParam = {
-        type: typesW.TransactionType.TransferAsset,
-        sign: typesW.SignType.SecretKey,
-        assetID: btcID,
-        amount: artRedeemed,
-        fromAccount: admin.account,
-        toAccountAddr: alice.address,
-        payFlags: { totalFee: fee },
-      }; // TODO:ref: store a basic transfer params
-
-      /* Check status before txn */
-
-      const mintReceipt = runtime.executeTx([
-        mintCallParams,
-        mintPayTxParams,
-        mintCollectTxParams,
-      ]);
-      assert.throws(() => {
-        const burnReceipt = runtime.executeTx([
-          burnCallParams,
-          burnPayTxParams,
-          burnCollectTxParams,
-        ]);
-      }, "RUNTIME_ERR1007: Teal code rejected by logic");
+      assertInitStatus(alice);
     });
   });
 });
