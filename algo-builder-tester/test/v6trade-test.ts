@@ -12,8 +12,8 @@ const runtime_config = {
 const dispensedInit = BigInt(1e8);
 const totalUsd = BigInt(1e18);
 const totalBtc = BigInt(1e18);
-const initialUsd = totalUsd - dispensedInit * 2n;
-const initialBtc = totalBtc - dispensedInit * 2n;
+const initialAdminUsd = totalUsd - dispensedInit * 2n;
+const initialAdminBtc = totalBtc - dispensedInit * 2n;
 // TODO:ref: should make an aUSD asset and read from there.
 const STABLE_NAME = "aUSD";
 const ASSET_NAME = "aBTC";
@@ -183,7 +183,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     let aliceCallParam: typesW.AppCallsParam;
     let alicePayTxParam: typesW.AssetTransferParam;
     let aliceCollectTxParam: typesW.AssetTransferParam;
-    this.beforeAll(function () {
+    this.beforeEach(function () {
       aliceCallParam = {
         type: typesW.TransactionType.CallApp,
         sign: typesW.SignType.SecretKey,
@@ -212,17 +212,33 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       };
     });
 
-    function assertInitStatus() {
+    function resetInitStatus() {
       // TODO:: can't "beforeEach" : new describe()
       syncAccounts();
+      function setAccountAsset(
+        account: AccountStore,
+        assetID: number,
+        amount: bigint
+      ) {
+        return (runtime.getAccount(account.address).assets.get(assetID)![
+          "amount"
+        ]! = amount);
+      }
+      setAccountAsset(alice, btcID, dispensedInit);
+      setAccountAsset(alice, usdID, dispensedInit);
+      setAccountAsset(billy, btcID, dispensedInit);
+      setAccountAsset(billy, usdID, dispensedInit);
+      setAccountAsset(admin, btcID, initialAdminBtc);
+      setAccountAsset(admin, usdID, initialAdminUsd);
+
       assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!); // 1k from dispense
       assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!); // 1k from dispense
-      assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!); // 2k dispensed
-      assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
+      assert.equal(initialAdminUsd, admin.assets.get(usdID)!["amount"]!); // 2k dispensed
+      assert.equal(initialAdminBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     }
-    this.beforeEach(assertInitStatus);
-    this.afterEach(assertInitStatus);
+    this.beforeEach(resetInitStatus);
+    this.afterEach(resetInitStatus);
     it.only("buy aBTC of 2aUSD ", function () {
       const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
       const btcCollected = BigInt(
@@ -258,13 +274,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(btcCollected, alice.getLocalState(appID, "AAA_balance")); // minted 200 aUSD Unit
       // TODO:ref:#1: should return to the initial state after each test
 
-      /* return to initial state */
-      alicePayTxParam.assetID = btcID;
-      alicePayTxParam.amount = btcCollected;
-      aliceCollectTxParam.assetID = usdID;
-      aliceCollectTxParam.amount = usdPaid;
-      // runtime.getAccount(alice.add).assets.get(btcID)!["amount"]! = dispensedInit;
-      runtime.executeTx([alicePayTxParam, aliceCollectTxParam]); // signed by alice.sk,admin.sk
+      /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
     it("sell 5179e10-8 aBTC (2aUSD)", function () {
@@ -272,7 +282,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       const aBtcPaid = 5179n;
       const aUsdCollected = (aBtcPaid / 10n) * 5n;
       /* Check status before txn */
-      assertInitStatus();
+      resetInitStatus();
       /* Txn */
       alicePayTxParam.assetID = btcID;
       alicePayTxParam.amount = aBtcPaid;
