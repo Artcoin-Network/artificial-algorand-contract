@@ -212,17 +212,11 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     function assertInitStatus() {
       // TODO:: can't "beforeEach" : new describe()
       syncAccounts();
-      // TODO:ref: mb use  `alice.getAssetHolding`
       assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!); // 1k from dispense
       assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!); // 1k from dispense
       assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!); // 2k dispensed
       assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
-      syncAccounts();
-      console.log("not good : "); // DEV_LOG_TO_REMOVE
-      // syncAccounts();
-      let als2 = alice.getLocalState(appID, "AAA_balance");
-      console.log("als2 : ", als2); // DEV_LOG_TO_REMOVE
-      assert.equal(0n, als2); // holding 0 AAA
+      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     }
     it.only("buy aBTC of 2aUSD ", function () {
       const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
@@ -230,6 +224,13 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
         Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
         // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
       );
+      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
+      // console.log("btcCollected : ", btcCollected); // 5179
+
+      /* Check status before txn */
+      assertInitStatus();
+
+      /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
       alicePayTxParam.assetID = usdID;
       alicePayTxParam.amount = usdPaid;
@@ -262,12 +263,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       aliceCollectTxParam.amount = usdPaid;
       // alice.assets.get(btcID)!["amount"]! = dispensedInit;
       runtime.executeTx([alicePayTxParam, aliceCollectTxParam]); // signed by alice.sk,admin.sk
-      let als = alice.appsLocalState.get(appID)?.["key-value"];
-      console.log("als : ", als); // DEV_LOG_TO_REMOVE
-
-      let nls = alice.setLocalState(appID, "AAA_balance", 0n);
-      console.log("nls : ", nls); // DEV_LOG_TO_REMOVE
-      console.log("good : "); // DEV_LOG_TO_REMOVE
+      runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
       assertInitStatus();
 
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
