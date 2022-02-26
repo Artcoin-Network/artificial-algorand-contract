@@ -147,7 +147,7 @@ def approval_program(asset_config: AssetConfig) -> str:
             AppCall.sender(),
             Bytes("AAA_balance"),
             App.localGet(AppCall.sender(), Bytes("AAA_balance"))
-            - Sending.asset_amount(),
+            - Receiving.asset_amount(),
         ),
         App.globalPut(
             Bytes("price_info"),
