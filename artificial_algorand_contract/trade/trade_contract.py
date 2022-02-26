@@ -1,17 +1,14 @@
 from pyteal import (
-    Add,
     And,
     App,
     Assert,
     Bytes,
     Cond,
-    Div,
     Ed25519Verify,
     Global,
     Gtxn,
     If,
     Int,
-    Minus,
     Mode,
     OnComplete,
     Return,
@@ -23,6 +20,7 @@ from ..classes.algorand import TealCmdList, TealPackage, TealParam
 from .asset_config import AssetConfig, aUSD_ID
 
 TEAL_VERSION = 5
+USD_ATOM_IN_ONE = Int(10**6)
 
 
 def gen_teal_param(asset_config: AssetConfig) -> TealParam:
@@ -67,7 +65,6 @@ def approval_program(asset_config: AssetConfig) -> str:
         input("AAA_ID shouldn't be 0")
     AAA_NAME = asset_config["AAA_name"]
     SUM_ASSET = f"+{AAA_NAME}"
-    STABLE_ID = aUSD_ID
     PRICE_B16 = Int(int(asset_config["price"] * 2**16))
     AAA_ATOM_IN_ONE = Int(10 ** asset_config["decimals"])
     SucceedSeq = Seq(Return(Int(1)))
@@ -97,26 +94,27 @@ def approval_program(asset_config: AssetConfig) -> str:
                 Receiving.asset_receiver() == Global.creator_address(),
                 AppCall.sender() == Receiving.sender(),
                 Receiving.sender() == Sending.asset_receiver(),
-                Receiving.xfer_asset() == Int(STABLE_ID),
+                Receiving.xfer_asset() == Int(aUSD_ID),
                 Sending.xfer_asset() == Int(AAA_ID),
             ),
         ),
         Assert(
-            (Receiving.asset_amount() << Int(16)) * AAA_ATOM_IN_ONE / PRICE_B16
+            (Receiving.asset_amount() << Int(16))
+            * AAA_ATOM_IN_ONE
+            / PRICE_B16
+            / USD_ATOM_IN_ONE
             == Sending.asset_amount(),
             # TODO:discuss: price affected by network delay?
         ),
         App.localPut(
             Receiving.sender(),
             Bytes(AAA_NAME),
-            Add(
-                App.localGet(Receiving.sender(), Bytes(AAA_NAME)),
-                Receiving.asset_amount(),
-            ),
+            App.localGet(Receiving.sender(), Bytes(AAA_NAME))
+            + Receiving.asset_amount(),
         ),
         App.globalPut(
             Bytes(SUM_ASSET),
-            Add(App.globalGet(Bytes(SUM_ASSET)), (Receiving.asset_amount())),
+            App.globalGet(Bytes(SUM_ASSET)) + (Receiving.asset_amount()),
         ),
         SucceedSeq,
     )
@@ -130,7 +128,7 @@ def approval_program(asset_config: AssetConfig) -> str:
                 Receiving.asset_receiver() == Global.creator_address(),
                 AppCall.sender() == Receiving.sender(),  # called and paid by same user
                 Receiving.sender() == Sending.asset_receiver(),
-                Receiving.xfer_asset() == Int(STABLE_ID),
+                Receiving.xfer_asset() == Int(aUSD_ID),
                 Sending.xfer_asset() == Int(AAA_ID),
             ),
         ),
@@ -141,17 +139,10 @@ def approval_program(asset_config: AssetConfig) -> str:
         App.localPut(
             Receiving.sender(),
             Bytes(AAA_NAME),
-            Minus(
-                App.localGet(Receiving.sender(), Bytes(AAA_NAME)),
-                Sending.asset_amount(),
-            ),
+            App.localGet(Receiving.sender(), Bytes(AAA_NAME)) - Sending.asset_amount(),
         ),
         App.globalPut(
-            Bytes(SUM_ASSET),
-            Minus(
-                App.globalGet(Bytes(SUM_ASSET)),
-                Sending.asset_amount(),
-            ),
+            Bytes(SUM_ASSET), App.globalGet(Bytes(SUM_ASSET)) - Sending.asset_amount()
         ),
         SucceedSeq,
     )

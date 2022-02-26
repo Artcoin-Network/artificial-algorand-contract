@@ -194,6 +194,8 @@ int 100000000
 *
 int 2530550743
 /
+int 1000000
+/
 gtxn 2 AssetAmount
 ==
 assert
