@@ -161,22 +161,6 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     return { aBTC, aUSD };
   }
 
-  describe("related ASA", function () {
-    it("Asset creation and dispense", function () {
-      const adminAssets = admin.createdAssets;
-      syncAccounts();
-      assert.isTrue(adminAssets.has(btcID) && adminAssets.has(usdID));
-      // dispensed 1k $ART$ to alice and billy
-      assert.equal(dispensedInit, alice.assets.get(btcID)!["amount"]!);
-      assert.equal(dispensedInit, billy.assets.get(btcID)!["amount"]!);
-      assert.equal(dispensedInit, alice.assets.get(usdID)!["amount"]!);
-      assert.equal(dispensedInit, billy.assets.get(usdID)!["amount"]!);
-      // from admin was $ART$ dispensed
-      assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!);
-      assert.equal(initialUsd, admin.assets.get(usdID)!["amount"]!);
-    });
-  });
-
   describe("buy/sell with smart contract, static price ", function () {
     let aliceCallParam: typesW.AppCallsParam;
     let alicePayTxParam: typesW.AssetTransferParam;
@@ -235,22 +219,17 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       assert.equal(initialBtc, admin.assets.get(btcID)!["amount"]!); // 2k dispensed
       syncAccounts();
       console.log("not good : "); // DEV_LOG_TO_REMOVE
-      let als = alice.getLocalState(appID, "AAA_balance");
-      console.log("als : ", als); // DEV_LOG_TO_REMOVE
-      assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
+      // syncAccounts();
+      let als2 = alice.getLocalState(appID, "AAA_balance");
+      console.log("als2 : ", als2); // DEV_LOG_TO_REMOVE
+      assert.equal(0n, als2); // holding 0 AAA
     }
     it.only("buy aBTC of 2aUSD ", function () {
-      // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const usdPaid = BigInt(2e6); // 2aUSD, 2/38613.14 *10^8 = 5179 smallest units of BTC.
       const btcCollected = BigInt(
         Math.floor((Number(usdPaid) * 1e8) / 1e6 / 38613.14)
         // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
       );
-      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = 25.8979197237 = 25
-      // console.log("btcCollected : ", btcCollected); // 5179
-      /* Check status before txn */
-      assertInitStatus();
-      /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
       alicePayTxParam.assetID = usdID;
       alicePayTxParam.amount = usdPaid;
@@ -290,6 +269,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       console.log("nls : ", nls); // DEV_LOG_TO_REMOVE
       console.log("good : "); // DEV_LOG_TO_REMOVE
       assertInitStatus();
+
       assert.equal(0n, alice.getLocalState(appID, "AAA_balance")); // holding 0 AAA
     });
     it("sell 5179e10-8 aBTC (2aUSD)", function () {
