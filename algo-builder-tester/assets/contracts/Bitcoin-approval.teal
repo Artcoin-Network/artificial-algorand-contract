@@ -89,7 +89,7 @@ bnz main_l23
 gtxna 0 ApplicationArgs 0
 byte "sell"
 ==
-gtxn 0 AssetSender
+gtxn 1 AssetSender
 byte "AAA_balance"
 app_local_get
 gtxn 1 AssetAmount

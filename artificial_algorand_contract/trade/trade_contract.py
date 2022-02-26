@@ -194,7 +194,7 @@ def approval_program(asset_config: AssetConfig) -> str:
         [
             And(
                 AppCall.application_args[0] == Bytes("sell"),
-                App.localGet(AppCall.asset_sender(), Bytes("AAA_balance"))
+                App.localGet(Receiving.asset_sender(), Bytes("AAA_balance"))
                 >= Receiving.asset_amount(),
                 # TODO:DONE: user should can sell more than bought? diff from stake.
             ),
