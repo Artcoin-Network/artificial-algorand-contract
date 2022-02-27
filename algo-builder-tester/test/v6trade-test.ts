@@ -335,7 +335,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     });
     it.only("sell>balance would fail, TODO:ref: contract", function () {
       // TODO:discuss: should we assert? :down:
-      // The `AAA_balance-aBtcPaid` will actually throw an error(overflow) for being negative;
+      // The `AAA_balance-aBtcPaid` will actually throw an error(underflow) for being negative;
       const aBtcPaid = 5179n;
       const aUsdCollected = 1999774n;
       const initialAliceBtc = aBtcPaid - 1n;

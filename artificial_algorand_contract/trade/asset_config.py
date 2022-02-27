@@ -19,19 +19,18 @@ class AssetConfig(TypedDict):
     decimals: int
     AAA_id: int
     total: int  # use same number as real life.
-    price: float  # price of some micro unit. in contract using `price * e-[decimal]`
-    # piece = atomic unit of the asset. eg. 1 BTC = 10^8 pieces.
-    # price_e6 = integer, with a fixed unit of 1^10-6USD. So all are integer, more readable.
-    # price_b16 = integer, with a fixed unit of 2^-16USD. So all are integer, less cost. OK USE THIS!
-    # using price_b16
-    # TODO:DONE: we have a margin of error in price. Price should be dependent on it.
+    price: float  # price of 1 unit(like 1BTC=38k) of asset in USD
+    # price_b16 = integer, with a fixed unit of 2^-16USD. This should be OK with our supported asset.
+    # decided to use price_b16 on meeting 0226 for lower cost.
+    # collateralizable: bool
+
     # starting with contract_: only used in contract part, not in ASA part.
     contract_cmd_list: TealCmdList
     contract_local_ints_scheme: list | dict  # only care about len
     contract_local_bytes_scheme: list | dict  # only care about len
     contract_global_ints_scheme: list | dict  # only care about len
     contract_global_bytes_scheme: list | dict  # only care about len
-    # collateralizable: bool
+
     # starting with ASA_: only used in ASA part, not in contract part.
     # ASA_defaultFrozen: bool
     # ASA_manager: str
@@ -57,8 +56,6 @@ default_local_ints_scheme = {
 default_local_bytes_scheme = ["last_msg"]
 default_global_ints_scheme = []
 default_global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
-# TODO:todo: do we need 3 contracts for 1 AAA? price_info, ZKP and trade : read another global state
-# TODO:DONE: 1 account can have 10 smart contract.
 
 aBTC_config: AssetConfig = {
     "ASSET_name": "Bitcoin",
