@@ -8,6 +8,9 @@ sys.path.insert(0, ".")
 from algobpy.parse import parse_params
 from pyteal import *  # type: ignore wildcard import
 
+NAMES3 = "BTCETHXRPADASOLDOTUSTLTCUNITRXFTTBCHXLMFTMETC"
+NAMES4 = "USDTUSDCLUNAAVAXBUSDDOGESHIBATOMNEARALGOMANA"
+
 
 def algob_tester(RECEIVER_ADDRESS=None):
     """
@@ -68,6 +71,18 @@ def algob_tester(RECEIVER_ADDRESS=None):
         [Int(1), FailSeq],
     )  # cannot write Seq(Cond,Return(Int(1))): "All cond body should have same return type"
     tst7 = Seq(App.globalPut(Bytes("console"), Gtxn[0].application_args[1]), SuccessSeq)
+    coin_name_len = ScratchVar(TealType.uint64)
+    coin_list_len = ScratchVar(TealType.uint64)
+    tst8 = Seq(
+        coin_list_len.store(Len(Bytes(NAMES3))),  # TODO: use global state
+        coin_name_len.store(Len(Gtxn[0].application_args[1])),
+        If(
+            Int(1),
+            App.globalPut(Bytes("console"), Gtxn[0].application_args[1]),
+            App.globalPut(Bytes("console"), Bytes("coin_name not found")),
+        ),
+        SuccessSeq,
+    )
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
@@ -105,6 +120,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
         Cond(
             [Gtxn[0].application_args[0] == Bytes("reset"), reset],  # resetApp
+            [Gtxn[0].application_args[0] == Bytes("TST8"), tst8],  # TST5  # TST5
             [Gtxn[0].application_args[0] == Bytes("TST7"), tst7],  # TST5  # TST5
             [Gtxn[0].application_args[0] == Bytes("TST5"), tst5],  # TST5  # TST5
             [
@@ -146,7 +162,7 @@ if __name__ == "__main__":
         _params = parse_params(sys.argv[1], params)
         if _params:
             param = _params
-    compiled = compileTeal(algob_tester(), Mode.Application)
+    compiled = compileTeal(algob_tester(), Mode.Application, version=5)
 
     """write to file"""
     with open("algob-tester.teal", "w") as f:

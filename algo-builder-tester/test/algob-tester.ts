@@ -29,6 +29,7 @@ describe.only("algob-tester", function () {
 
   function fetchGlobalBytes(key: string) {
     syncAccounts();
+    // TODO:ref: use String.from() as in v6trade
     return new TextDecoder("utf-8").decode(
       admin.getGlobalState(appID, key) as Uint8Array
     );
@@ -185,7 +186,7 @@ describe.only("algob-tester", function () {
   });
 
   it("TST6: PyTeal.Mul is not necessary with `*`?", function () {
-    assert.ok(true); // tested in v6trade.
+    assert.ok(true); // tested in v6trade. and "sub1"
   });
   it("TST7: str:str:something", function () {
     const callAppParams: types.AppCallsParam = {
@@ -199,7 +200,26 @@ describe.only("algob-tester", function () {
     runtime.executeTx(callAppParams);
     assert.equal(fetchGlobalBytes("console"), "str:something");
   });
-  it.skip("TST3: Global.group_size() == Int(1) with JS Array, fail with len2", function () {
+  it("TST8: string operation str `in` list", function () {
+    // there's no "in operator"
+    const callAppParams: types.AppCallsParam = {
+      type: types.TransactionType.CallApp,
+      sign: types.SignType.SecretKey,
+      fromAccount: alice.account,
+      appID: appID,
+      payFlags: { totalFee: fee },
+      appArgs: ["str:TST8", "str:btc"],
+    };
+    runtime.executeTx(callAppParams, 5);
+    syncAccounts();
+    const acm = fetchGlobalBytes("console");
+    // alice_console_message
+    console.log("acm : ", acm); // DEV_LOG_TO_REMOVE
+
+    callAppParams.appArgs = ["str:TST8", "str:usd"];
+    runtime.executeTx(callAppParams);
+  });
+  it.skip("TST8: ", function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
@@ -208,18 +228,6 @@ describe.only("algob-tester", function () {
       payFlags: { totalFee: fee },
       appArgs: ["str:escrow", "int:100"],
     };
-
-    const escrowTxParams: types.AlgoTransferParam = {
-      type: types.TransactionType.TransferAlgo,
-      sign: types.SignType.SecretKey,
-      fromAccount: admin.account,
-      payFlags: { totalFee: fee },
-      toAccountAddr: admin.address,
-      amountMicroAlgos: BigInt(1e3),
-    };
-    assert.throws(() => {
-      runtime.executeTx([callAppParams, escrowTxParams]);
-    }, "RUNTIME_ERR1007: Teal code rejected by logic");
-    // runtime.executeTx();
+    runtime.executeTx(callAppParams);
   });
 });
