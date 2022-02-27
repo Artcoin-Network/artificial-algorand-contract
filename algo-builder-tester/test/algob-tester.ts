@@ -210,14 +210,19 @@ describe.only("algob-tester", function () {
       payFlags: { totalFee: fee },
       appArgs: ["str:TST8", "str:btc"],
     };
-    runtime.executeTx(callAppParams, 5);
+    runtime.executeTx(callAppParams);
     syncAccounts();
-    const acm = fetchGlobalBytes("console");
-    // alice_console_message
-    console.log("acm : ", acm); // DEV_LOG_TO_REMOVE
+    assert.equal(fetchGlobalBytes("console"), "btc");
 
     callAppParams.appArgs = ["str:TST8", "str:usd"];
     runtime.executeTx(callAppParams);
+    syncAccounts();
+    assert.equal(fetchGlobalBytes("console"), "usd");
+
+    callAppParams.appArgs = ["str:TST8", "str:eur"];
+    runtime.executeTx(callAppParams);
+    syncAccounts();
+    assert.equal(fetchGlobalBytes("console"), "eur");
   });
   it.skip("TST8: ", function () {
     const callAppParams: types.AppCallsParam = {
