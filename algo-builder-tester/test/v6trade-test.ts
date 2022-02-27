@@ -37,7 +37,7 @@ const u8a2Str = (u8a: Uint8Array) =>
 const arr2u8a = (arr: number[]) => {
   return Uint8Array.from(arr);
 };
-describe.only("aUSD-aBTC buy/sell smart contract", function () {
+describe("aUSD-aBTC buy/sell smart contract", function () {
   const fee = 1000;
   const minBalance = 1e6;
 
@@ -318,7 +318,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     }
-    it.only("sell 5179e10-8 aBTC (2aUSD)", function () {
+    it("sell 5179e10-8 aBTC (2aUSD)", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const aBtcPaid = 5179n;
       const aUsdCollected = 1999774n;
@@ -333,7 +333,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
 
       testSellABtcWithAlice(aBtcPaid, aUsdCollected, initialAliceBtc);
     });
-    it.only("sell>balance would fail, TODO:ref: contract", function () {
+    it("sell>balance would fail, TODO:ref: contract", function () {
       // TODO:discuss: should we assert? :down:
       // The `AAA_balance-aBtcPaid` will actually throw an error(underflow) for being negative;
       const aBtcPaid = 5179n;
@@ -346,7 +346,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
-    it.only("throws error if not 3 transactions.", function () {
+    it("throws error if not 3 transactions.", function () {
       aliceCallParam.appArgs = ["str:sell"];
       alicePayTxParam.assetID = btcID;
       alicePayTxParam.amount = 0n;
@@ -365,7 +365,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       ); // not 3 transactions
       // "RUNTIME_ERR1007: Teal code rejected by logic"
     });
-    it.only("throws error 3 transactions are not Call,Pay,Collect.", function () {
+    it("throws error 3 transactions are not Call,Pay,Collect.", function () {
       aliceCallParam.appArgs = ["str:sell"];
       alicePayTxParam.assetID = btcID;
       alicePayTxParam.amount = 0n;
