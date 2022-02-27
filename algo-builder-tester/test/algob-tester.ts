@@ -202,6 +202,7 @@ describe.only("algob-tester", function () {
   });
   it("TST8: string operation str `in` list", function () {
     // there's no "in operator"
+    // ALWAYS USE SMALL CASE FOR COIN NAME
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
@@ -217,12 +218,12 @@ describe.only("algob-tester", function () {
     callAppParams.appArgs = ["str:TST8", "str:usd"];
     runtime.executeTx(callAppParams);
     syncAccounts();
-    assert.equal(fetchGlobalBytes("console"), "usd");
+    assert.equal(fetchGlobalBytes("console"), "coin_name not found");
 
     callAppParams.appArgs = ["str:TST8", "str:eur"];
     runtime.executeTx(callAppParams);
     syncAccounts();
-    assert.equal(fetchGlobalBytes("console"), "eur");
+    assert.equal(fetchGlobalBytes("console"), "coin_name not found");
   });
   it.skip("TST8: ", function () {
     const callAppParams: types.AppCallsParam = {

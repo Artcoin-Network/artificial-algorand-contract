@@ -8,8 +8,8 @@ sys.path.insert(0, ".")
 from algobpy.parse import parse_params
 from pyteal import *  # type: ignore wildcard import
 
-NAMES3 = "BTCETHXRPADASOLDOTUSTLTCUNITRXFTTBCHXLMFTMETC"
-NAMES4 = "USDTUSDCLUNAAVAXBUSDDOGESHIBATOMNEARALGOMANA"
+NAMES3 = "btcethxrpadasoldotustltcunitrxfttbchxlmftmetc"
+NAMES4 = "usdtusdclunaavaxbusddogeshibatomnearalgomana"
 
 
 def algob_tester(RECEIVER_ADDRESS=None):
@@ -73,14 +73,24 @@ def algob_tester(RECEIVER_ADDRESS=None):
     tst7 = Seq(App.globalPut(Bytes("console"), Gtxn[0].application_args[1]), SuccessSeq)
     coin_name_len = ScratchVar(TealType.uint64)
     coin_list_len = ScratchVar(TealType.uint64)
+    str_start = ScratchVar(TealType.uint64)
     tst8 = Seq(
         coin_list_len.store(Len(Bytes(NAMES3))),  # TODO: use global state
         coin_name_len.store(Len(Gtxn[0].application_args[1])),
-        If(
-            Int(1),
-            App.globalPut(Bytes("console"), Gtxn[0].application_args[1]),
-            App.globalPut(Bytes("console"), Bytes("coin_name not found")),
+        str_start.store(Int(0)),
+        # TODO: name_len not always 3.
+        While(str_start.load() < coin_list_len.load()).Do(
+            If(
+                Gtxn[0].application_args[1]
+                == Extract(Bytes(NAMES3), str_start.load(), coin_name_len.load()),
+                Seq(
+                    App.globalPut(Bytes("console"), Gtxn[0].application_args[1]),
+                    SuccessSeq,
+                ),
+                str_start.store(Add(str_start.load(), coin_name_len.load())),
+            )
         ),
+        App.globalPut(Bytes("console"), Bytes("coin_name not found")),
         SuccessSeq,
     )
     sub1 = Seq(
