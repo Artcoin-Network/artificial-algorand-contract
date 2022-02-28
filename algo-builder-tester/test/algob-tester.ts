@@ -221,7 +221,7 @@ describe.only("algob-tester", function () {
     callAppParams.appArgs = ["str:TST8", "str:atom"];
     runtime.executeTx(callAppParams);
     syncAccounts();
-    assert.equal(fetchGlobalBytes("console"), "coin_name not found");
+    assert.equal(fetchGlobalBytes("console"), "atom");
   });
   it.skip("TST8: ", function () {
     const callAppParams: types.AppCallsParam = {

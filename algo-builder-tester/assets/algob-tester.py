@@ -93,7 +93,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
             If(
                 Gtxn[0].application_args[1]
                 == Extract(
-                    App.globalGet(Bytes("names3")),
+                    coin_search_list.load(),
                     str_start.load(),
                     coin_name_len.load(),
                 ),
