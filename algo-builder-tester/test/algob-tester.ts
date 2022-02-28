@@ -231,13 +231,40 @@ describe.only("algob-tester", function () {
         fromAccount: alice.account,
         appID: appID,
         payFlags: { totalFee: fee },
-        appArgs: ["str:log"],
+        appArgs: ["str:LOG"],
       };
       // let app = runtime.getApp(appID); // not in global state nor app.
       // syncAccounts(); let als = alice.getAppFromLocal(appID); // not in local state
       let rct = runtime.executeTx(callAppParams); // not in receipt
       if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
       assert.deepEqual(rct.logs!, ["I'm a sample log"]);
+    });
+    it("EXT_GLOBAL: test log message", function () {
+      const verifierID = runtime.deployApp(
+        "price-verifier.py",
+        runtime_config.clearProgramFileName,
+        {
+          sender: admin.account,
+          globalBytes: 1,
+          globalInts: 1,
+          localBytes: 0,
+          localInts: 0,
+        },
+        {}
+      ).appID;
+
+      const callAppParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ["str:EXT_GLOBAL"],
+        foreignApps: [verifierID],
+      };
+      let rct = runtime.executeTx(callAppParams); // not in receipt
+      if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
+      assert.deepEqual(rct.logs!, ["3456789"]);
     });
   });
 });

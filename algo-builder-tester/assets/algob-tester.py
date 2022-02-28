@@ -108,6 +108,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
         SuccessSeq,
     )
     log_seq = Seq(Log(Bytes("I'm a sample log")), SuccessSeq)
+    ext_global_seq = Seq(Log(Bytes("3456789")), SuccessSeq)
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
@@ -147,7 +148,8 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
         Cond(
             [Gtxn[0].application_args[0] == Bytes("reset"), reset],  # resetApp
-            [Gtxn[0].application_args[0] == Bytes("log"), log_seq],
+            [Gtxn[0].application_args[0] == Bytes("EXT_GLOBAL"), ext_global_seq],
+            [Gtxn[0].application_args[0] == Bytes("LOG"), log_seq],
             [Gtxn[0].application_args[0] == Bytes("TST8"), tst8],
             [Gtxn[0].application_args[0] == Bytes("TST7"), tst7],
             [Gtxn[0].application_args[0] == Bytes("TST5"), tst5],
@@ -167,7 +169,6 @@ def algob_tester(RECEIVER_ADDRESS=None):
 
     program = Cond(
         [Txn.application_id() == Int(0), on_creation],
-        [Txn.on_completion() == OnComplete.OptIn, on_opt_in],
         [Txn.on_completion() == OnComplete.OptIn, on_opt_in],
         [Txn.on_completion() == OnComplete.CloseOut, on_close_out],
         [Txn.on_completion() == OnComplete.UpdateApplication, on_update_app],
