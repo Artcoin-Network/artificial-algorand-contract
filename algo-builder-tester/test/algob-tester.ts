@@ -262,11 +262,32 @@ describe.only("algob-tester", function () {
         appArgs: ["str:EXT_GLOBAL"],
         foreignApps: [verifierID],
       };
-      let rct = runtime.executeTx(callAppParams); // not in receipt
-      if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
+      runtime.executeTx(callAppParams);
       syncAccounts();
       assert.equal(admin.getGlobalState(appID, "var1"), 3456789n);
       assert.equal(fetchGlobalBytes("console"), "1234567890-1234");
+
+      // changing price
+      const callVerifierParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: admin.account,
+        appID: verifierID,
+        payFlags: { totalFee: fee },
+        appArgs: ["str:irrelevant", "str:asd89yhg890"],
+        // TODO:discuss#1: how to pass Int?
+        // appArgs: ["int:10348967", "str:asd89yhg890"],
+        // appArgs: ["str:10348967n", "int:10348967"],
+        // appArgs: [new Uint8Array(10348967), "int:10348967"],
+      };
+      let rct = runtime.executeTx(callVerifierParams);
+      if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
+      console.log("rct.logs! : ", rct.logs!); // DEV_LOG_TO_REMOVE
+
+      runtime.executeTx(callAppParams);
+      syncAccounts();
+      assert.equal(admin.getGlobalState(appID, "var1"), 10348967n);
+      assert.equal(fetchGlobalBytes("console"), "asd89yhg890");
     });
   });
 });

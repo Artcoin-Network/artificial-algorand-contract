@@ -9,6 +9,7 @@ from algobpy.parse import parse_params
 from pyteal import *  # type: ignore wildcard import
 
 STATIC_PRICE = 3456789
+last_price = Bytes("last_price")
 
 
 def price_verifier():
@@ -20,7 +21,7 @@ def price_verifier():
         Return(Int(1)),
     )
     on_creation = Seq(
-        App.globalPut(Bytes("last_price"), Int(STATIC_PRICE)),
+        App.globalPut(last_price, Int(STATIC_PRICE)),
         App.globalPut(Bytes("last_UTC0"), Bytes("1234567890-1234")),
         SuccessSeq,
     )
@@ -28,14 +29,20 @@ def price_verifier():
     on_close_out = SuccessSeq
     on_update_app = SuccessSeq
     on_delete_app = SuccessSeq
-    on_call = If(
-        Int(1),
-        Seq(
-            App.globalPut(Bytes("last_price"), Gtxn[0].application_args[0]),
-            App.globalPut(Bytes("last_UTC0"), Gtxn[0].application_args[1]),
-            SuccessSeq,
-        ),
-        Return(Int(0)),
+    uint = ScratchVar(TealType.bytes)
+    on_call = Seq(
+        uint.store(Txn.application_args[0]),
+        # TODO:discuss#1: how to pass Int?
+        # appArgs: ["str:10348967n", "int:10348967"],
+        # appArgs: [new Uint8Array(10348967), "int:10348967"],
+        # If(
+        #     Txn.application_args[0] == Txn.application_args[1],
+        #     Log(Bytes("same")),
+        #     Log(Bytes("not same")),
+        # ),
+        App.globalPut(last_price, Int(10348967)),
+        App.globalPut(Bytes("last_UTC0"), Gtxn[0].application_args[1]),
+        SuccessSeq,
     )
 
     program = Cond(
