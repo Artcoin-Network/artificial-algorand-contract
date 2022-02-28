@@ -223,15 +223,21 @@ describe.only("algob-tester", function () {
     syncAccounts();
     assert.equal(fetchGlobalBytes("console"), "atom");
   });
-  it.skip("TST8: ", function () {
-    const callAppParams: types.AppCallsParam = {
-      type: types.TransactionType.CallApp,
-      sign: types.SignType.SecretKey,
-      fromAccount: alice.account,
-      appID: appID,
-      payFlags: { totalFee: fee },
-      appArgs: ["str:escrow", "int:100"],
-    };
-    runtime.executeTx(callAppParams);
+  describe.only("capability test, 2022Feb27 batch, appArgs as name, +TST7,8", function () {
+    it("LOG: test log message", function () {
+      const callAppParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ["str:log"],
+      };
+      // let app = runtime.getApp(appID); // not in global state nor app.
+      // syncAccounts(); let als = alice.getAppFromLocal(appID); // not in local state
+      let rct = runtime.executeTx(callAppParams); // not in receipt
+      if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
+      assert.deepEqual(rct.logs!, ["I'm a sample log"]);
+    });
   });
 });
