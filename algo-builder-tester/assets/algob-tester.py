@@ -71,16 +71,24 @@ def algob_tester(RECEIVER_ADDRESS=None):
         [Int(1), FailSeq],
     )  # cannot write Seq(Cond,Return(Int(1))): "All cond body should have same return type"
     tst7 = Seq(App.globalPut(Bytes("console"), Gtxn[0].application_args[1]), SuccessSeq)
+    coin_search_list = ScratchVar(TealType.bytes)
     coin_name_len = ScratchVar(TealType.uint64)
     coin_list_len = ScratchVar(TealType.uint64)
     str_start = ScratchVar(TealType.uint64)
     tst8 = Seq(
-        coin_list_len.store(
-            Len(App.globalGet(Bytes("names3")))
-        ),  # TODO: use global state
         coin_name_len.store(Len(Gtxn[0].application_args[1])),
+        Cond(
+            [
+                coin_name_len.load() == Int(3),
+                coin_search_list.store(App.globalGet(Bytes("names3"))),
+            ],
+            [
+                coin_name_len.load() == Int(4),
+                coin_search_list.store(App.globalGet(Bytes("names4"))),
+            ],
+        ),
+        coin_list_len.store(Len(coin_search_list.load())),
         str_start.store(Int(0)),
-        # TODO: name_len not always 3.
         While(str_start.load() < coin_list_len.load()).Do(
             If(
                 Gtxn[0].application_args[1]

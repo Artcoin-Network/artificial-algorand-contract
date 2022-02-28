@@ -164,7 +164,6 @@ describe.only("algob-tester", function () {
     runtime.executeTx([callAppParams, callAppParams]);
     assert.equal(fetchGlobalBytes("console"), "group2");
   });
-
   it("TST5: `Gtxn[0]` and `Txn` are the same", function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
@@ -184,7 +183,6 @@ describe.only("algob-tester", function () {
     assert.equal(fetchGlobalBytes("console"), "gtxn>txn");
     assert.notEqual(fetchGlobalBytes("console"), "gtxn>gtxn");
   });
-
   it("TST6: PyTeal.Mul is not necessary with `*`?", function () {
     assert.ok(true); // tested in v6trade. and "sub1"
   });
@@ -220,7 +218,7 @@ describe.only("algob-tester", function () {
     syncAccounts();
     assert.equal(fetchGlobalBytes("console"), "coin_name not found");
 
-    callAppParams.appArgs = ["str:TST8", "str:eur"];
+    callAppParams.appArgs = ["str:TST8", "str:atom"];
     runtime.executeTx(callAppParams);
     syncAccounts();
     assert.equal(fetchGlobalBytes("console"), "coin_name not found");
