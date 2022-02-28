@@ -39,3 +39,4 @@ share/python-wheels/
 MANIFEST
 algo-builder-tester/algob-tester.teal
 .DS_Store
+algo-builder-tester/price_verifier.teal
