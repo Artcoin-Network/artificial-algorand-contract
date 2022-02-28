@@ -44,7 +44,7 @@ describe.only("algob-tester", function () {
       clearProgramFileName,
       {
         sender: admin.account,
-        globalBytes: 2,
+        globalBytes: 4,
         globalInts: 4,
         localBytes: 0,
         localInts: 0,

@@ -75,14 +75,20 @@ def algob_tester(RECEIVER_ADDRESS=None):
     coin_list_len = ScratchVar(TealType.uint64)
     str_start = ScratchVar(TealType.uint64)
     tst8 = Seq(
-        coin_list_len.store(Len(Bytes(NAMES3))),  # TODO: use global state
+        coin_list_len.store(
+            Len(App.globalGet(Bytes("names3")))
+        ),  # TODO: use global state
         coin_name_len.store(Len(Gtxn[0].application_args[1])),
         str_start.store(Int(0)),
         # TODO: name_len not always 3.
         While(str_start.load() < coin_list_len.load()).Do(
             If(
                 Gtxn[0].application_args[1]
-                == Extract(Bytes(NAMES3), str_start.load(), coin_name_len.load()),
+                == Extract(
+                    App.globalGet(Bytes("names3")),
+                    str_start.load(),
+                    coin_name_len.load(),
+                ),
                 Seq(
                     App.globalPut(Bytes("console"), Gtxn[0].application_args[1]),
                     SuccessSeq,
@@ -120,6 +126,8 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("var1"), Int(1)),
         App.globalPut(Bytes("var2"), Int(2)),
         App.globalPut(Bytes("var3"), Int(3)),
+        App.globalPut(Bytes("names3"), Bytes(NAMES3)),
+        App.globalPut(Bytes("names4"), Bytes(NAMES4)),
         SuccessSeq,
     )
     on_opt_in = SuccessSeq
