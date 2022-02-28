@@ -188,7 +188,8 @@ if __name__ == "__main__":
         _params = parse_params(sys.argv[1], params)
         if _params:
             param = _params
-    compiled = compileTeal(algob_tester(), Mode.Application, version=5)
+    compiled = compileTeal(algob_tester(), Mode.Application, version=6)
+    # pyteal.TealInputError: Unsupported TEAL version: 6. Excepted an integer in the range [2, 5]
 
     """write to file"""
     with open("algob-tester.teal", "w") as f:
