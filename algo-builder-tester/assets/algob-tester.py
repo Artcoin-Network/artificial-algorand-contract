@@ -108,7 +108,24 @@ def algob_tester(RECEIVER_ADDRESS=None):
         SuccessSeq,
     )
     log_seq = Seq(Log(Bytes("I'm a sample log")), SuccessSeq)
-    ext_global_seq = Seq(App.globalPut(Bytes("console"), Bytes("3456789")), SuccessSeq)
+    last_price = App.globalGetEx(Txn.applications[1], Bytes("last_price"))
+    last_UTC0 = App.globalGetEx(Txn.applications[1], Bytes("last_UTC0"))
+
+    ext_global_seq = Seq(
+        [
+            last_price,
+            If(
+                last_price.hasValue(),
+                App.globalPut(Bytes("var1"), last_price.value()),
+            ),
+            last_UTC0,
+            If(
+                last_UTC0.hasValue(),
+                App.globalPut(Bytes("console"), last_UTC0.value()),
+            ),
+            SuccessSeq,
+        ]
+    )
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
