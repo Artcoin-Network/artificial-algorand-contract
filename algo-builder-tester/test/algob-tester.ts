@@ -264,7 +264,7 @@ describe.only("algob-tester", function () {
       };
       let rct = runtime.executeTx(callAppParams); // not in receipt
       if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
-      assert.deepEqual(rct.logs!, ["3456789"]);
+      assert.deepEqual(fetchGlobalBytes("console"), "3456789");
     });
   });
 });

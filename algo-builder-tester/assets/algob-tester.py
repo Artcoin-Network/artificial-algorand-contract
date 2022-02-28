@@ -108,7 +108,7 @@ def algob_tester(RECEIVER_ADDRESS=None):
         SuccessSeq,
     )
     log_seq = Seq(Log(Bytes("I'm a sample log")), SuccessSeq)
-    ext_global_seq = Seq(Log(Bytes("3456789")), SuccessSeq)
+    ext_global_seq = Seq(App.globalPut(Bytes("console"), Bytes("3456789")), SuccessSeq)
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
