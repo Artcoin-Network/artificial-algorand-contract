@@ -1,4 +1,4 @@
-""" PyTeal to escrow asset and get stable coin aUSD. """
+""" PyTeal to stake asset and get stable coin aUSD. """
 # TODO: make sure that ASSET and STABLE have the same decimals, otherwise this can happen: 1e-8 ART <-> 1e-4 aUSD
 # TODO: Fail message when user doesn't have enough minted ART. (in burn>mint case)
 # TODO:feat: dry run, check how many can user burn.
@@ -39,6 +39,7 @@ from ..resources import (
 )
 
 """ SETTING """
+# TODO: ref: move settings to another file.
 # this is for algob testing. to use on testnet, use imports
 ASSET_ID = 9
 STABLE_ID = 10
@@ -53,9 +54,9 @@ CRD = Int(
 """ Smart contract typing """
 cmd_list: TealCmdList = [
     ["mint"],  # send $ART$ to mint
-    ["burn"],  # burn $ART$ from escrow
+    ["burn"],  # burn $ART$ from stake
 ]
-local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need escrow more
+local_ints_scheme = [ASSET_NAME, "aUSD"]  # to check if user can burn / need stake more
 local_bytes_scheme = [
     "last_msg"
 ]  # not needed at burn: no more data for more data, maybe more "blocks"?
@@ -65,7 +66,7 @@ global_ints_scheme = {
     "CRN": "collateralisation ratio = numerator / 2^CRDD, \
         in range [0,2^CRDD] with precision of 2^-CRDD (too fine precision).",
     # collateralisation ratio numerator
-    # TODO:discuss: precision 2^-16 should be enough, we don't need that much.
+    # TODO:DO: precision 2^-16 should be enough, we don't need that much.
     # TODO:+: Decimal is clearer. 2^-16 ~== 0.0015%. the floating range is much larger.
 }
 global_bytes_scheme = ["price_info"]  # origin of price, implementation of ZKP.
@@ -124,7 +125,7 @@ def approval_program():
         ),
         Assert(
             scratch_issuing.load()
-            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+            == Gtxn[2].asset_amount(),  # TODO:SKIP: price affected by network delay?
         ),
         App.localPut(
             Gtxn[1].sender(),
@@ -155,7 +156,7 @@ def approval_program():
 
     on_burn = Seq(
         # user burn aUSD to get $ART$ back,
-        # TODO:feat: checked user has enough escrowed $ART$ in [on_call]
+        # TODO:feat: checked user has enough staked $ART$ in [on_call]
         Assert(
             And(
                 Global.group_size() == Int(3),
@@ -172,7 +173,7 @@ def approval_program():
         ),
         Assert(
             scratch_returning.load()  # TODO:ref: not needed, can use Gtxn[2].asset_amount()
-            == Gtxn[2].asset_amount(),  # TODO:discuss: price affected by network delay?
+            == Gtxn[2].asset_amount(),  # TODO:SKIP: price affected by network delay?
         ),
         App.localPut(
             Gtxn[1].sender(),
@@ -248,7 +249,7 @@ def approval_program():
                 Gtxn[0].application_args[0] == Bytes("burn"),
                 App.localGet(Gtxn[1].asset_sender(), Bytes(STABLE_NAME))
                 >= Gtxn[1].asset_amount(),
-                # TODO:discuss: move to on_burn? needed? (TEAL has integer underflow)
+                # TODO:: move to on_burn? needed? (TEAL has integer underflow)
                 # correct logic depend on ACID (atomicity, consistency, isolation, durability).
                 # cannot be used to cheat (will not parallel) for ACID.
             ),
@@ -283,6 +284,6 @@ def clear_program():
 # print(approval_program())
 # print(clear_program())
 
-escrow_package = TealPackage(
-    "escrow", approval_program(), clear_program(), teal_param, cmd_list
+stake_package = TealPackage(
+    "stake", approval_program(), clear_program(), teal_param, cmd_list
 )

@@ -1,0 +1,231 @@
+#pragma version 5
+gtxn 0 ApplicationID
+int 0
+==
+bnz main_l24
+gtxn 0 OnCompletion
+int NoOp
+==
+bnz main_l14
+gtxn 0 OnCompletion
+int CloseOut
+==
+bnz main_l10
+gtxn 0 OnCompletion
+int UpdateApplication
+==
+bnz main_l9
+gtxn 0 OnCompletion
+int DeleteApplication
+==
+bnz main_l8
+gtxn 0 OnCompletion
+int OptIn
+==
+bnz main_l7
+err
+main_l7:
+gtxn 0 Sender
+byte "AAA_balance"
+int 0
+app_local_put
+gtxn 0 Sender
+byte "margin_trading"
+int 0
+app_local_put
+gtxn 0 Sender
+byte "margin_rate"
+int 1
+app_local_put
+gtxn 0 Sender
+byte "last_msg"
+byte "OptIn OK."
+app_local_put
+int 1
+return
+main_l8:
+global CreatorAddress
+gtxn 0 Sender
+==
+gtxna 0 ApplicationArgs 0
+gtxna 0 ApplicationArgs 1
+gtxna 0 ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l9:
+global CreatorAddress
+gtxn 0 Sender
+==
+gtxna 0 ApplicationArgs 0
+gtxna 0 ApplicationArgs 1
+gtxna 0 ApplicationArgs 2
+ed25519verify
+&&
+return
+main_l10:
+byte "Only allow 0 $ART$ user, or lose $ART$."
+byte ""
+==
+bnz main_l13
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]Only allow 0 $ART$ user, or lose $ART$."
+app_local_put
+main_l12:
+int 0
+return
+main_l13:
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]:EMPTY_ERR_MSG"
+app_local_put
+b main_l12
+main_l14:
+gtxna 0 ApplicationArgs 0
+byte "buy"
+==
+bnz main_l23
+gtxna 0 ApplicationArgs 0
+byte "sell"
+==
+gtxn 1 AssetSender
+byte "AAA_balance"
+app_local_get
+gtxn 1 AssetAmount
+>=
+&&
+bnz main_l22
+int 1
+bnz main_l18
+err
+main_l18:
+byte "wrong args"
+byte ""
+==
+bnz main_l21
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]wrong args"
+app_local_put
+main_l20:
+int 0
+return
+main_l21:
+gtxn 0 Sender
+byte "last_msg"
+byte "[ERR]:EMPTY_ERR_MSG"
+app_local_put
+b main_l20
+main_l22:
+global GroupSize
+int 3
+==
+gtxn 1 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 Sender
+gtxn 1 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+gtxn 1 XferAsset
+int 9
+==
+&&
+gtxn 2 XferAsset
+int 10
+==
+&&
+assert
+gtxn 1 AssetAmount
+int 1000000
+*
+int 2530550743
+*
+int 100000000
+/
+int 16
+shr
+gtxn 2 AssetAmount
+==
+assert
+gtxn 0 Sender
+byte "AAA_balance"
+gtxn 0 Sender
+byte "AAA_balance"
+app_local_get
+gtxn 1 AssetAmount
+-
+app_local_put
+byte "price_info"
+byte "price_info"
+app_global_get
+byte ",usr-sell"
+concat
+app_global_put
+int 1
+return
+main_l23:
+global GroupSize
+int 3
+==
+gtxn 1 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 Sender
+gtxn 1 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+gtxn 1 XferAsset
+int 10
+==
+&&
+gtxn 2 XferAsset
+int 9
+==
+&&
+assert
+gtxn 1 AssetAmount
+int 16
+shl
+int 100000000
+*
+int 2530550743
+/
+int 1000000
+/
+gtxn 2 AssetAmount
+==
+assert
+gtxn 0 Sender
+byte "AAA_balance"
+gtxn 0 Sender
+byte "AAA_balance"
+app_local_get
+gtxn 2 AssetAmount
++
+app_local_put
+byte "price_info"
+byte "price_info"
+app_global_get
+byte ",usr-buy"
+concat
+app_global_put
+int 1
+return
+main_l24:
+byte "price_info"
+byte "waiting ZKP"
+app_global_put
+int 1
+return
