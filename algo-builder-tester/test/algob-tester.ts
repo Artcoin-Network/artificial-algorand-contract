@@ -9,7 +9,7 @@ TST1, TST2: Test Global.group_size()
 `;
 const adminBalance = BigInt(1e8);
 const fee = 1e3;
-describe.only("algob-tester", function () {
+describe("algob-tester", function () {
   let admin = new AccountStore(adminBalance);
   let alice = new AccountStore(adminBalance);
   let billy = new AccountStore(adminBalance);
@@ -223,7 +223,7 @@ describe.only("algob-tester", function () {
     syncAccounts();
     assert.equal(fetchGlobalBytes("console"), "atom");
   });
-  describe.only("capability test, 2022Feb27 batch, appArgs as name, +TST7,8", function () {
+  describe("capability test, 2022Feb27 batch, appArgs as name, +TST7,8", function () {
     it("LOG: test log message", function () {
       const callAppParams: types.AppCallsParam = {
         type: types.TransactionType.CallApp,
