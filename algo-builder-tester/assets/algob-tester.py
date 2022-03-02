@@ -8,6 +8,9 @@ sys.path.insert(0, ".")
 from algobpy.parse import parse_params
 from pyteal import *  # type: ignore wildcard import
 
+NAMES3 = "btcethxrpadasoldotustltcunitrxfttbchxlmftmetc"
+NAMES4 = "usdtusdclunaavaxbusddogeshibatomnearalgomana"
+
 
 def algob_tester(RECEIVER_ADDRESS=None):
     """
@@ -67,7 +70,62 @@ def algob_tester(RECEIVER_ADDRESS=None):
         ],
         [Int(1), FailSeq],
     )  # cannot write Seq(Cond,Return(Int(1))): "All cond body should have same return type"
+    tst7 = Seq(App.globalPut(Bytes("console"), Gtxn[0].application_args[1]), SuccessSeq)
+    coin_search_list = ScratchVar(TealType.bytes)
+    coin_name_len = ScratchVar(TealType.uint64)
+    coin_list_len = ScratchVar(TealType.uint64)
+    str_start = ScratchVar(TealType.uint64)
+    tst8 = Seq(
+        coin_name_len.store(Len(Gtxn[0].application_args[1])),
+        Cond(
+            [
+                coin_name_len.load() == Int(3),
+                coin_search_list.store(App.globalGet(Bytes("names3"))),
+            ],
+            [
+                coin_name_len.load() == Int(4),
+                coin_search_list.store(App.globalGet(Bytes("names4"))),
+            ],
+        ),
+        coin_list_len.store(Len(coin_search_list.load())),
+        str_start.store(Int(0)),
+        While(str_start.load() < coin_list_len.load()).Do(
+            If(
+                Gtxn[0].application_args[1]
+                == Extract(
+                    coin_search_list.load(),
+                    str_start.load(),
+                    coin_name_len.load(),
+                ),
+                Seq(
+                    App.globalPut(Bytes("console"), Gtxn[0].application_args[1]),
+                    SuccessSeq,
+                ),
+                str_start.store(Add(str_start.load(), coin_name_len.load())),
+            )
+        ),
+        App.globalPut(Bytes("console"), Bytes("coin_name not found")),
+        SuccessSeq,
+    )
+    log_seq = Seq(Log(Bytes("I'm a sample log")), SuccessSeq)
+    last_price = App.globalGetEx(Txn.applications[1], Bytes("last_price"))
+    last_UTC0 = App.globalGetEx(Txn.applications[1], Bytes("last_UTC0"))
 
+    ext_global_seq = Seq(
+        [
+            last_price,
+            If(
+                last_price.hasValue(),
+                App.globalPut(Bytes("var1"), last_price.value()),
+            ),
+            last_UTC0,
+            If(
+                last_UTC0.hasValue(),
+                App.globalPut(Bytes("console"), last_UTC0.value()),
+            ),
+            SuccessSeq,
+        ]
+    )
     sub1 = Seq(
         App.globalPut(
             Bytes("var1"), App.globalGet(Bytes("var1")) * Int(2)
@@ -95,6 +153,8 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("var1"), Int(1)),
         App.globalPut(Bytes("var2"), Int(2)),
         App.globalPut(Bytes("var3"), Int(3)),
+        App.globalPut(Bytes("names3"), Bytes(NAMES3)),
+        App.globalPut(Bytes("names4"), Bytes(NAMES4)),
         SuccessSeq,
     )
     on_opt_in = SuccessSeq
@@ -105,7 +165,11 @@ def algob_tester(RECEIVER_ADDRESS=None):
         App.globalPut(Bytes("called"), App.globalGet(Bytes("called")) + Int(1)),
         Cond(
             [Gtxn[0].application_args[0] == Bytes("reset"), reset],  # resetApp
-            [Gtxn[0].application_args[0] == Bytes("TST5"), tst5],  # TST5  # TST5
+            [Gtxn[0].application_args[0] == Bytes("EXT_GLOBAL"), ext_global_seq],
+            [Gtxn[0].application_args[0] == Bytes("LOG"), log_seq],
+            [Gtxn[0].application_args[0] == Bytes("TST8"), tst8],
+            [Gtxn[0].application_args[0] == Bytes("TST7"), tst7],
+            [Gtxn[0].application_args[0] == Bytes("TST5"), tst5],
             [
                 And(
                     Global.group_size() == Int(1),
@@ -145,7 +209,8 @@ if __name__ == "__main__":
         _params = parse_params(sys.argv[1], params)
         if _params:
             param = _params
-    compiled = compileTeal(algob_tester(), Mode.Application)
+    compiled = compileTeal(algob_tester(), Mode.Application, version=6)
+    # pyteal.TealInputError: Unsupported TEAL version: 6. Excepted an integer in the range [2, 5]
 
     """write to file"""
     with open("algob-tester.teal", "w") as f:

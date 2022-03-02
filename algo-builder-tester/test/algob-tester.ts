@@ -6,10 +6,10 @@ import { types } from "@algo-builder/web";
 
 const DESCRIPTION = `
 TST1, TST2: Test Global.group_size()
-`
+`;
 const adminBalance = BigInt(1e8);
 const fee = 1e3;
-describe.skip('algob-tester', function () {
+describe("algob-tester", function () {
   let admin = new AccountStore(adminBalance);
   let alice = new AccountStore(adminBalance);
   let billy = new AccountStore(adminBalance);
@@ -18,8 +18,8 @@ describe.skip('algob-tester', function () {
   let lsig: LogicSigAccount;
   const runtime_config = {
     approvalProgramFileName: "algob-tester.py",
-    clearProgramFileName: "escrow-clear.teal",
-  }
+    clearProgramFileName: "stake-clear.teal",
+  };
 
   function syncAccounts() {
     admin = runtime.getAccount(admin.address);
@@ -29,24 +29,25 @@ describe.skip('algob-tester', function () {
 
   function fetchGlobalBytes(key: string) {
     syncAccounts();
-    return new TextDecoder("utf-8").decode(admin.getGlobalState(appID, key) as Uint8Array)
+    // TODO:ref: use String.from() as in v6trade
+    return new TextDecoder("utf-8").decode(
+      admin.getGlobalState(appID, key) as Uint8Array
+    );
   }
   this.beforeAll(function () {
     runtime = new Runtime([admin, alice, billy]);
-    syncAccounts()
-    const { approvalProgramFileName,
-      clearProgramFileName,
-    } = runtime_config;
+    syncAccounts();
+    const { approvalProgramFileName, clearProgramFileName } = runtime_config;
     // deploy a new app
     appID = runtime.deployApp(
       approvalProgramFileName,
       clearProgramFileName,
       {
         sender: admin.account,
-        globalBytes: 2,
+        globalBytes: 4,
         globalInts: 4,
         localBytes: 0,
-        localInts: 0
+        localInts: 0,
       },
       {}
     ).appID; // This number is always 9
@@ -55,10 +56,9 @@ describe.skip('algob-tester', function () {
     runtime.optInToApp(admin.address, appID, {}, {});
     runtime.optInToApp(alice.address, appID, {}, {});
     runtime.optInToApp(billy.address, appID, {}, {});
+  });
 
-  })
-
-  it('TST1: Global.group_size() == Int(1) without JS Array', function () {
+  it("TST1: Global.group_size() == Int(1) without JS Array", function () {
     // call the app with one transaction
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
@@ -73,15 +73,15 @@ describe.skip('algob-tester', function () {
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: ["str:reset"]
+      appArgs: ["str:reset"],
     }; // TODO:ref: Too many replicas, refactor with beforeEach.
     runtime.executeTx(resetAppParams);
-    assert.equal(fetchGlobalBytes('console'), 'empty')
+    assert.equal(fetchGlobalBytes("console"), "empty");
     runtime.executeTx(callAppParams);
     // runtime.executeTx([callAppParams, escrowTxParams]);
-    assert.equal(fetchGlobalBytes('console'), 'group1')
-  })
-  it('TST2: Global.group_size() == Int(1) with JS Array', function () {
+    assert.equal(fetchGlobalBytes("console"), "group1");
+  });
+  it("TST2: Global.group_size() == Int(1) with JS Array", function () {
     // call the app with one transaction
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
@@ -96,16 +96,16 @@ describe.skip('algob-tester', function () {
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: ["str:reset"]
+      appArgs: ["str:reset"],
     }; // TODO:ref: Too many replicas, refactor with beforeEach.
     runtime.executeTx(resetAppParams);
-    assert.equal(fetchGlobalBytes('console'), 'empty')
+    assert.equal(fetchGlobalBytes("console"), "empty");
     runtime.executeTx([callAppParams]);
     // runtime.executeTx([callAppParams, escrowTxParams]);
-    assert.equal(fetchGlobalBytes('console'), 'group1')
-  })
+    assert.equal(fetchGlobalBytes("console"), "group1");
+  });
 
-  it('TST3: Global.group_size() == Int(1) with JS Array with len3 reject by TEAL', function () {
+  it("TST3: Global.group_size() == Int(1) with JS Array with len3 reject by TEAL", function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
@@ -119,21 +119,23 @@ describe.skip('algob-tester', function () {
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: ["str:reset"]
+      appArgs: ["str:reset"],
     }; // TODO:ref: Too many replicas, refactor with beforeEach.
     runtime.executeTx(resetAppParams);
-    assert.equal(fetchGlobalBytes('console'), 'empty')
-    assert.throws(() => { runtime.executeTx([callAppParams, callAppParams, callAppParams]) }, 'RUNTIME_ERR1007: Teal code rejected by logic')
+    assert.equal(fetchGlobalBytes("console"), "empty");
+    assert.throws(() => {
+      runtime.executeTx([callAppParams, callAppParams, callAppParams]);
+    }, "RUNTIME_ERR1007: Teal code rejected by logic");
     // runtime.executeTx();
-  })
-  it('TST4: Global.group_size() == Int(1) with 2 txn', function () {
+  });
+  it("TST4: Global.group_size() == Int(1) with 2 txn", function () {
     const resetAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: ["str:reset"]
+      appArgs: ["str:reset"],
     }; // TODO:ref: Too many replicas, refactor with beforeEach.
 
     const callAppParams: types.AppCallsParam = {
@@ -151,74 +153,141 @@ describe.skip('algob-tester', function () {
       payFlags: { totalFee: fee },
       toAccountAddr: admin.address,
       amountMicroAlgos: BigInt(1e3),
-    }
+    };
     runtime.executeTx(resetAppParams);
-    assert.equal(fetchGlobalBytes('console'), 'empty')
+    assert.equal(fetchGlobalBytes("console"), "empty");
     // this didn't call the app
-    runtime.executeTx([escrowTxParams, escrowTxParams])
-    assert.equal(fetchGlobalBytes('console'), 'empty')
-    runtime.executeTx([callAppParams, escrowTxParams])
-    assert.equal(fetchGlobalBytes('console'), 'group2')
-    runtime.executeTx([callAppParams, callAppParams])
-    assert.equal(fetchGlobalBytes('console'), 'group2')
-  })
-
-  it('TST5: `Gtxn[0]` and `Txn` are the same', function () {
+    runtime.executeTx([escrowTxParams, escrowTxParams]);
+    assert.equal(fetchGlobalBytes("console"), "empty");
+    runtime.executeTx([callAppParams, escrowTxParams]);
+    assert.equal(fetchGlobalBytes("console"), "group2");
+    runtime.executeTx([callAppParams, callAppParams]);
+    assert.equal(fetchGlobalBytes("console"), "group2");
+  });
+  it("TST5: `Gtxn[0]` and `Txn` are the same", function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: []
+      appArgs: [],
     };
-    callAppParams.appArgs = ['str:TST5', 'str:txn']
-    runtime.executeTx(callAppParams)
+    callAppParams.appArgs = ["str:TST5", "str:txn"];
+    runtime.executeTx(callAppParams);
     // we've already known that txn can read by gtxn[0] from TST2
-    assert.equal(fetchGlobalBytes('console'), 'txn>txn')
+    assert.equal(fetchGlobalBytes("console"), "txn>txn");
 
-    callAppParams.appArgs = ['str:TST5', 'str:gtxn']
-    runtime.executeTx([callAppParams]) // this is a gtxn, but can read by txn
-    assert.equal(fetchGlobalBytes('console'), 'gtxn>txn')
-    assert.notEqual(fetchGlobalBytes('console'), 'gtxn>gtxn')
-  })
-
-  // it.skip('TST7: str:str:something', function () {
-  it.skip('TST6: MUL is not? necessary than `*`', function () {
+    callAppParams.appArgs = ["str:TST5", "str:gtxn"];
+    runtime.executeTx([callAppParams]); // this is a gtxn, but can read by txn
+    assert.equal(fetchGlobalBytes("console"), "gtxn>txn");
+    assert.notEqual(fetchGlobalBytes("console"), "gtxn>gtxn");
+  });
+  it("TST6: PyTeal.Mul is not necessary with `*`?", function () {
+    assert.ok(true); // tested in v6trade. and "sub1"
+  });
+  it("TST7: str:str:something", function () {
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: []
+      appArgs: ["str:TST7", "str:str:something"],
     };
-    callAppParams.appArgs = ['str:TST5', 'str:txn']
-    runtime.executeTx(callAppParams)
-    callAppParams.appArgs = ['str:TST5', 'str:gtxn']
-    runtime.executeTx([callAppParams])
-    assert.throws(() => { runtime.executeTx([callAppParams]) }, 'RUNTIME_ERR1007: Teal code rejected by logic')
-    // runtime.executeTx();
-  })
-  it.skip('TST3: Global.group_size() == Int(1) with JS Array, fail with len2', function () {
+    runtime.executeTx(callAppParams);
+    assert.equal(fetchGlobalBytes("console"), "str:something");
+  });
+  it("TST8: string operation str `in` list", function () {
+    // there's no "in operator"
+    // ALWAYS USE SMALL CASE FOR COIN NAME
     const callAppParams: types.AppCallsParam = {
       type: types.TransactionType.CallApp,
       sign: types.SignType.SecretKey,
       fromAccount: alice.account,
       appID: appID,
       payFlags: { totalFee: fee },
-      appArgs: ['str:escrow', 'int:100']
+      appArgs: ["str:TST8", "str:btc"],
     };
+    runtime.executeTx(callAppParams);
+    syncAccounts();
+    assert.equal(fetchGlobalBytes("console"), "btc");
 
-    const escrowTxParams: types.AlgoTransferParam = {
-      type: types.TransactionType.TransferAlgo,
-      sign: types.SignType.SecretKey,
-      fromAccount: admin.account,
-      payFlags: { totalFee: fee },
-      toAccountAddr: admin.address,
-      amountMicroAlgos: BigInt(1e3),
-    }
-    assert.throws(() => { runtime.executeTx([callAppParams, escrowTxParams]) }, 'RUNTIME_ERR1007: Teal code rejected by logic')
-    // runtime.executeTx();
-  })
-})
+    callAppParams.appArgs = ["str:TST8", "str:usd"];
+    runtime.executeTx(callAppParams);
+    syncAccounts();
+    assert.equal(fetchGlobalBytes("console"), "coin_name not found");
+
+    callAppParams.appArgs = ["str:TST8", "str:atom"];
+    runtime.executeTx(callAppParams);
+    syncAccounts();
+    assert.equal(fetchGlobalBytes("console"), "atom");
+  });
+  describe("capability test, 2022Feb27 batch, appArgs as name, +TST7,8", function () {
+    it("LOG: test log message", function () {
+      const callAppParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ["str:LOG"],
+      };
+      // let app = runtime.getApp(appID); // not in global state nor app.
+      // syncAccounts(); let als = alice.getAppFromLocal(appID); // not in local state
+      let rct = runtime.executeTx(callAppParams); // not in receipt
+      if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
+      assert.deepEqual(rct.logs!, ["I'm a sample log"]);
+    });
+    it("EXT_GLOBAL: test log message", function () {
+      const verifierID = runtime.deployApp(
+        "price-verifier.py",
+        runtime_config.clearProgramFileName,
+        {
+          sender: admin.account,
+          globalBytes: 1,
+          globalInts: 1,
+          localBytes: 0,
+          localInts: 0,
+        },
+        {}
+      ).appID;
+
+      const callAppParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: alice.account,
+        appID: appID,
+        payFlags: { totalFee: fee },
+        appArgs: ["str:EXT_GLOBAL"],
+        foreignApps: [verifierID],
+      };
+      runtime.executeTx(callAppParams);
+      syncAccounts();
+      assert.equal(admin.getGlobalState(appID, "var1"), 3456789n);
+      assert.equal(fetchGlobalBytes("console"), "1234567890-1234");
+
+      // changing price
+      const callVerifierParams: types.AppCallsParam = {
+        type: types.TransactionType.CallApp,
+        sign: types.SignType.SecretKey,
+        fromAccount: admin.account,
+        appID: verifierID,
+        payFlags: { totalFee: fee },
+        appArgs: ["str:irrelevant", "str:asd89yhg890"],
+        // TODO:discuss#1: how to pass Int?
+        // appArgs: ["int:10348967", "str:asd89yhg890"],
+        // appArgs: ["str:10348967n", "int:10348967"],
+        // appArgs: [new Uint8Array(10348967), "int:10348967"],
+      };
+      let rct = runtime.executeTx(callVerifierParams);
+      if (Array.isArray(rct)) rct = rct[0]; // for TS Engine
+      console.log("rct.logs! : ", rct.logs!); // DEV_LOG_TO_REMOVE
+
+      runtime.executeTx(callAppParams);
+      syncAccounts();
+      assert.equal(admin.getGlobalState(appID, "var1"), 10348967n);
+      assert.equal(fetchGlobalBytes("console"), "asd89yhg890");
+    });
+  });
+});

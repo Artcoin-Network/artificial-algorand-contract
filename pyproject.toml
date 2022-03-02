@@ -5,15 +5,16 @@ name = "artificial-algorand-contract"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
-pyteal = {extras = ["all"], version = "^0.9.1"}
+PyYAML = "^6.0"
+black = "^22.1.0"
+pyteal = {extras = ["all"], version = "^0.10.0"}
 python = "^3.10"
 python-dotenv = "^0.19.2"
-black = "^22.1.0"
 symmetric-secret-share = "^0.0.8"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
 black = {version = "^22.1.0", allow-prereleases = true}
+pytest = "^5.2"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

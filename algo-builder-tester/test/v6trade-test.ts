@@ -37,7 +37,7 @@ const u8a2Str = (u8a: Uint8Array) =>
 const arr2u8a = (arr: number[]) => {
   return Uint8Array.from(arr);
 };
-describe.only("aUSD-aBTC buy/sell smart contract", function () {
+describe("aUSD-aBTC buy/sell smart contract", function () {
   const fee = 1000;
   const minBalance = 1e6;
 
@@ -239,15 +239,19 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
     }
     this.beforeEach(resetInitStatus);
     this.afterEach(resetInitStatus);
-    it("buy aBTC of 2aUSD ", function () {
+    it("buy aBTC of 2aUSD", function () {
+      // TODO:ref:asset: unique setting
+      const aBtcNominalPrice = 38613.14; // from settings;
+      const aBtcPriceB16 = BigInt(Math.floor(aBtcNominalPrice * 2 ** 16)); // TODO: upgrade to B24.
       const aUsdPaid = BigInt(2e6); // 2aUSD,
-      const aBtcCollected = BigInt(
-        Math.floor((Number(aUsdPaid) * 1e8) / 1e6 / 38613.14)
-        // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
-        // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = aBTC_amount
-      );
+      const aBtcCollected =
+        ((aUsdPaid << 16n) * BigInt(1e8)) / BigInt(1e6) / aBtcPriceB16;
+      // TODO:discuss: const aBtcCollected = Math.floor((Number(aUsdPaid) * 1e8) / 1e6 / 38613.14);
+      // fix https://github.com/Artcoin-Network/artificial-algorand-contract/pull/7#discussion_r817577696
+      // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
+      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = aBTC_amount
       //  2/38613.14 *10^8 = 5179.58394 -> 5179 smallest units of BTC.
-      // console.log("btcCollected : ", btcCollected); // 5179
+      // console.log(" aBtcCollected: ", aBtcCollected); // should be 5179n
 
       /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
@@ -318,7 +322,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     }
-    it.only("sell 5179e10-8 aBTC (2aUSD)", function () {
+    it("sell 5179e10-8 aBTC (2aUSD)", function () {
       // Here both units of $ART$ and aUSD are the same, 1e-6 (by ASA.decimals).
       const aBtcPaid = 5179n;
       const aUsdCollected = 1999774n;
@@ -333,7 +337,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
 
       testSellABtcWithAlice(aBtcPaid, aUsdCollected, initialAliceBtc);
     });
-    it.only("sell>balance would fail, TODO:ref: contract", function () {
+    it("sell>balance would fail, TODO:ref: contract", function () {
       // TODO:discuss: should we assert? :down:
       // The `AAA_balance-aBtcPaid` will actually throw an error(underflow) for being negative;
       const aBtcPaid = 5179n;
@@ -346,7 +350,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       /* extra of return to initial state */
       runtime.getAccount(alice.address).setLocalState(appID, "AAA_balance", 0n);
     });
-    it.only("throws error if not 3 transactions.", function () {
+    it("throws error if not 3 transactions.", function () {
       aliceCallParam.appArgs = ["str:sell"];
       alicePayTxParam.assetID = btcID;
       alicePayTxParam.amount = 0n;
@@ -365,7 +369,7 @@ describe.only("aUSD-aBTC buy/sell smart contract", function () {
       ); // not 3 transactions
       // "RUNTIME_ERR1007: Teal code rejected by logic"
     });
-    it.only("throws error 3 transactions are not Call,Pay,Collect.", function () {
+    it("throws error 3 transactions are not Call,Pay,Collect.", function () {
       aliceCallParam.appArgs = ["str:sell"];
       alicePayTxParam.assetID = btcID;
       alicePayTxParam.amount = 0n;

@@ -3,8 +3,8 @@
 ## Install
 
 1. Install [Poetry](https://python-poetry.org/) with [Poetry Install Guide](https://python-poetry.org/docs/master/#installing-with-the-official-installer)
-2. Initiate Poetry: `poetry shell`
-3. Activate python venv:
+2. Initiate Poetry: `poetry install`
+3. Activate python venv: `poetry shell`
 4. Use [symmetric-secret-share](https://github.com/PabloLION/symmetric-secret-share) (installed by poetry): initiate local key chain`sss key` and add the following key into `keys`. Then download and decrypt the secret file with `sss inject ./sss.json` (or use `sss inject -k <key> ./sss.json`). ASK SOMEONE IN OUR TEAM TO USE OUR [KEY].
 
    ```json
