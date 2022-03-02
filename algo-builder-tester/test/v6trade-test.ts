@@ -239,15 +239,19 @@ describe("aUSD-aBTC buy/sell smart contract", function () {
     }
     this.beforeEach(resetInitStatus);
     this.afterEach(resetInitStatus);
-    it("buy aBTC of 2aUSD ", function () {
+    it("buy aBTC of 2aUSD", function () {
+      // TODO:ref:asset: unique setting
+      const aBtcNominalPrice = 38613.14; // from settings;
+      const aBtcPriceB16 = BigInt(Math.floor(aBtcNominalPrice * 2 ** 16)); // TODO: upgrade to B24.
       const aUsdPaid = BigInt(2e6); // 2aUSD,
-      const aBtcCollected = BigInt(
-        Math.floor((Number(aUsdPaid) * 1e8) / 1e6 / 38613.14)
-        // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
-        // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = aBTC_amount
-      );
+      const aBtcCollected =
+        ((aUsdPaid << 16n) * BigInt(1e8)) / BigInt(1e6) / aBtcPriceB16;
+      // TODO:discuss: const aBtcCollected = Math.floor((Number(aUsdPaid) * 1e8) / 1e6 / 38613.14);
+      // fix https://github.com/Artcoin-Network/artificial-algorand-contract/pull/7#discussion_r817577696
+      // trade_contract.py: aBTC_amount/AAA_ATOM_IN_ONE = aUSD_amount/USD_ATOM_IN_ONE/price
+      // (aUSD_amount/1e6/price) * 1e8(AAA_decimal) = aBTC_amount
       //  2/38613.14 *10^8 = 5179.58394 -> 5179 smallest units of BTC.
-      // console.log("btcCollected : ", btcCollected); // 5179
+      // console.log(" aBtcCollected: ", aBtcCollected); // should be 5179n
 
       /* Transaction */
       aliceCallParam.appArgs = ["str:buy"];
