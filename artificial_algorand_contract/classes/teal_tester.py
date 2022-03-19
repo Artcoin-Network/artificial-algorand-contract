@@ -1,4 +1,5 @@
-from typing import Literal, TypedDict
+from ctypes import Union
+from typing import Literal, Optional, TypedDict
 
 from algosdk.future import transaction
 from algosdk.v2client.algod import AlgodClient
@@ -35,7 +36,7 @@ class TealTester:
         self,
         teal_package: TealPackage,
         app_id: int | None = None,
-        settings: TypedDict | None = None,
+        settings: Optional[TypedDict] = None,
     ):
         from .algo_config import algo_config, config_initialized
 
@@ -69,8 +70,8 @@ class TealTester:
         appid = create_app(
             client=self.client,
             private_key=self.accounts.admin.get_secret_key(),
-            approval_program=compile_program(self.client, self.teal.approval),
-            clear_program=compile_program(self.client, self.teal.clear),
+            approval_program=self.teal.approval,
+            clear_program=self.teal.clear,
             global_schema=transaction.StateSchema(
                 self.teal.param["global_ints"], self.teal.param["global_bytes"]
             ),

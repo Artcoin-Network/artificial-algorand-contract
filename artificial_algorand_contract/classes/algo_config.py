@@ -59,6 +59,7 @@ class ClientInfo:
             self.algod_token = (
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             )
+            self.headers = None
         else:
             raise ValueError(f"client_type={client_type} not supported.")
 
@@ -86,4 +87,4 @@ class AlgoConfig:
         pass
 
 
-algo_config = AlgoConfig(client_type="pure_stake")
+algo_config = AlgoConfig(client_type="sandbox")
